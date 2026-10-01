@@ -72,7 +72,9 @@ build_images() {
 
     if [[ -n "${CR_PAT:-}" ]]; then
         temporary_registry_config=$(mktemp)
-        trap 'rm -f "${temporary_registry_config}"' EXIT
+        local cleanup_command
+        printf -v cleanup_command 'rm -f -- %q' "${temporary_registry_config}"
+        trap "${cleanup_command}" EXIT
 
         local registry_auth
         registry_auth=$(printf '%s:%s' "${USERNAME}" "${CR_PAT}" | base64 | tr -d '\r\n')

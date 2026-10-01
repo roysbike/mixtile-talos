@@ -22,11 +22,11 @@ steps:
     build:
       - |
         cd /pkg/src
-        CGO_ENABLED=0 go build -o ./blade3 .
+        CGO_ENABLED=0 go build -o ./mixtile-blade3 .
     install:
       - |
         mkdir -p /rootfs/installers/
-        cp -p /pkg/src/blade3 /rootfs/installers/blade3
+        cp -p /pkg/src/mixtile-blade3 /rootfs/installers/mixtile-blade3
 finalize:
   - from: /rootfs
     to: /rootfs
