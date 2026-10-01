@@ -64,10 +64,27 @@ build_images() {
         -v /dev:/dev
     )
 
-    # The overlay can be private in GHCR. Pass the existing Docker login to
-    # the imager so it can resolve the just-pushed OCI image.
-    if [[ -f "${HOME}/.docker/config.json" ]]; then
-        docker_args+=(-v "${HOME}/.docker/config.json:/root/.docker/config.json:ro")
+    # Docker Desktop stores credentials in a macOS-only helper which cannot
+    # run inside the Linux imager container. Build a portable config from the
+    # PAT when available so private GHCR overlays can be pulled.
+    local registry_config=${DOCKER_CONFIG:-"${HOME}/.docker"}/config.json
+    local temporary_registry_config=
+
+    if [[ -n "${CR_PAT:-}" ]]; then
+        temporary_registry_config=$(mktemp)
+        trap 'rm -f "${temporary_registry_config}"' EXIT
+
+        local registry_auth
+        registry_auth=$(printf '%s:%s' "${USERNAME}" "${CR_PAT}" | base64 | tr -d '\r\n')
+        printf '{"auths":{"%s":{"auth":"%s"}}}\n' \
+            "${REGISTRY}" "${registry_auth}" >"${temporary_registry_config}"
+        chmod 600 "${temporary_registry_config}"
+
+        registry_config=${temporary_registry_config}
+    fi
+
+    if [[ -f "${registry_config}" ]]; then
+        docker_args+=(-v "${registry_config}:/root/.docker/config.json:ro")
     fi
 
     local common_args=(
@@ -85,6 +102,11 @@ build_images() {
             "ghcr.io/siderolabs/imager:${TALOS_VERSION}" \
             "${kind}" "${common_args[@]}"
     done
+
+    if [[ -n "${temporary_registry_config}" ]]; then
+        rm -f "${temporary_registry_config}"
+        trap - EXIT
+    fi
 }
 
 main() {
