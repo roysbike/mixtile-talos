@@ -59,6 +59,29 @@ USERNAME=<namespace> ./build.sh image
 Artifacts are written to `_out/`. Set `OUTPUT_DIR`, `REGISTRY`, `IMAGE_TAG`
 or `TALOS_VERSION` to override their defaults.
 
+### macOS
+
+Docker Desktop must be running and ARM64 emulation enabled. The checked-in
+Makefile is compatible with the GNU Make 3.81 shipped by macOS and does not
+require GNU sed.
+
+Cross-building and running the privileged ARM64 imager through Docker Desktop
+is significantly slower than Linux. For repeatable builds, use the included
+GitHub Actions workflow.
+
+### GitHub Actions
+
+Push this branch to GitHub, open **Actions → Build Talos for Mixtile Blade 3
+→ Run workflow**. The workflow:
+
+1. enables ARM64 emulation and Buildx;
+2. publishes the temporary overlay to the repository owner's GHCR namespace;
+3. builds installer and raw metal images;
+4. uploads `_out/` as a workflow artifact for 14 days.
+
+No personal registry token is needed: the workflow uses `GITHUB_TOKEN` with
+`packages: write`.
+
 ## Kernel configuration audit
 
 Run:

@@ -56,6 +56,20 @@ build_overlay() {
 build_images() {
     mkdir -p "${OUTPUT_DIR}"
 
+    local docker_args=(
+        --rm
+        --privileged
+        --platform=linux/arm64
+        -v "${OUTPUT_DIR}:/out"
+        -v /dev:/dev
+    )
+
+    # The overlay can be private in GHCR. Pass the existing Docker login to
+    # the imager so it can resolve the just-pushed OCI image.
+    if [[ -f "${HOME}/.docker/config.json" ]]; then
+        docker_args+=(-v "${HOME}/.docker/config.json:/root/.docker/config.json:ro")
+    fi
+
     local common_args=(
         --arch arm64
         --base-installer-image "ghcr.io/siderolabs/installer-base:${TALOS_VERSION}"
@@ -67,9 +81,7 @@ build_images() {
     )
 
     for kind in installer metal; do
-        docker run --rm --privileged --platform=linux/arm64 \
-            -v "${OUTPUT_DIR}:/out" \
-            -v /dev:/dev \
+        docker run "${docker_args[@]}" \
             "ghcr.io/siderolabs/imager:${TALOS_VERSION}" \
             "${kind}" "${common_args[@]}"
     done
