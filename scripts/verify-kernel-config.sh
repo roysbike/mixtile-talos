@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-PKGS_REF=${PKGS_REF:-f694e1b}
-TALOS_REF=${TALOS_REF:-v1.14.1}
+PKGS_REF=${PKGS_REF:-6c312e4}
+TALOS_REF=${TALOS_REF:-v1.14.2}
 CONFIG=${1:-}
 
 tmp=$(mktemp -d)

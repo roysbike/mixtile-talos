@@ -4,15 +4,15 @@ set -Eeuo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "${ROOT}"
 
-TALOS_VERSION=${TALOS_VERSION:-v1.14.1}
-PKGS=${PKGS:-v1.14.0-25-gf694e1b}
-TOOLS=${TOOLS:-v1.14.0-7-ga404efb}
+TALOS_VERSION=${TALOS_VERSION:-v1.14.2}
+PKGS=${PKGS:-v1.14.0-37-g6c312e4}
+TOOLS=${TOOLS:-v1.14.0-8-g9776960}
 REGISTRY=${REGISTRY:-ghcr.io}
 USERNAME=${USERNAME:-}
 IMAGE_TAG=${IMAGE_TAG:-v0.3.0}
 OUTPUT_DIR=${OUTPUT_DIR:-"${ROOT}/_out"}
 
-DRBD_EXTENSION=${DRBD_EXTENSION:-ghcr.io/siderolabs/drbd:9.3.3-${TALOS_VERSION}}
+DRBD_EXTENSION=${DRBD_EXTENSION:-ghcr.io/siderolabs/drbd:9.3.4-${TALOS_VERSION}}
 ZFS_EXTENSION=${ZFS_EXTENSION:-ghcr.io/siderolabs/zfs:2.4.4-${TALOS_VERSION}}
 ISCSI_EXTENSION=${ISCSI_EXTENSION:-ghcr.io/siderolabs/iscsi-tools:v0.2.0}
 

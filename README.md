@@ -1,13 +1,13 @@
 # Talos 1.14 for Mixtile Blade 3
 
-This branch builds a Talos Linux `v1.14.1` ARM64 SBC overlay and bootable
+This branch builds a Talos Linux `v1.14.2` ARM64 SBC overlay and bootable
 images for the Mixtile Blade 3 (RK3588).
 
 ## Source baseline
 
-- Talos and imager: `v1.14.1`
-- Talos packages: `v1.14.0-25-gf694e1b`
-- Linux: `6.18.51`, the unmodified Talos ARM64 kernel
+- Talos and imager: `v1.14.2`
+- Talos packages: `v1.14.0-37-g6c312e4`
+- Linux: `6.18.54`, the unmodified Talos ARM64 kernel
 - U-Boot: `v2026.07`
 - Board DTS and U-Boot configuration: Armbian mainline Blade 3 port
 - TF-A: `lts-v2.14.6`
@@ -29,8 +29,8 @@ offset; it does not treat the Turing RK1 DTB as interchangeable with Blade 3.
 
 The final images use the official Talos 1.14.1 kernel and include:
 
-- `ghcr.io/siderolabs/drbd:9.3.3-v1.14.1`
-- `ghcr.io/siderolabs/zfs:2.4.4-v1.14.1`
+- `ghcr.io/siderolabs/drbd:9.3.4-v1.14.2`
+- `ghcr.io/siderolabs/zfs:2.4.4-v1.14.2`
 - `ghcr.io/siderolabs/iscsi-tools:v0.2.0`
 
 DRBD and ZFS therefore match the running official Talos kernel release,
@@ -67,7 +67,7 @@ Run:
 ./scripts/verify-kernel-config.sh
 ```
 
-The audit checks the exact `config-arm64` from the Talos 1.14.1 package
+The audit checks the exact `config-arm64` from the Talos 1.14.2 package
 commit and verifies that modular storage, NVMe, VFIO and Realtek drivers are
 listed in the Talos ARM64 initramfs manifest.
 

@@ -54,9 +54,9 @@ COMMON_ARGS += $(BUILD_ARGS)
 # extra variables
 
 PKGS_PREFIX ?= ghcr.io/siderolabs
-PKGS ?= v1.14.0-25-gf694e1b
+PKGS ?= v1.14.0-37-g6c312e4
 TOOLS_PREFIX ?= ghcr.io/siderolabs
-TOOLS ?= v1.14.0-7-ga404efb
+TOOLS ?= v1.14.0-8-g9776960
 
 # targets defines all the available targets
 
