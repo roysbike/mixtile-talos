@@ -1,20 +1,26 @@
-name: overlay-blade3
+name: mixtile-blade3
 variant: scratch
-shell: /toolchain/bin/bash
+shell: /bin/bash
 dependencies:
   - stage: base
 steps:
   - env:
-      GOPATH: /go
-      GOPROXY: https://goproxy.cn,direct
-      GOSUMDB: sum.golang.google.cn
+      GOPATH: /tmp/go
+    network: default
     cachePaths:
       - /.cache/go-build
-      - /go/pkg
+      - /tmp/go/pkg
+    prepare:
+      - |
+        cd /pkg/src
+        go mod download
+  - env:
+      GOPATH: /tmp/go
+    cachePaths:
+      - /.cache/go-build
+      - /tmp/go/pkg
     build:
       - |
-        export PATH=${PATH}:${TOOLCHAIN}/go/bin
-
         cd /pkg/src
         CGO_ENABLED=0 go build -o ./blade3 .
     install:
