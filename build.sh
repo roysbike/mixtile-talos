@@ -35,6 +35,7 @@ EOF
 require_tools() {
     command -v docker >/dev/null
     command -v make >/dev/null
+    command -v xz >/dev/null
 
     if [[ -z "${USERNAME}" ]]; then
         echo "USERNAME must name a writable namespace in ${REGISTRY}" >&2
@@ -99,11 +100,33 @@ build_images() {
         --system-extension-image "${ISCSI_EXTENSION}"
     )
 
-    for kind in installer metal; do
+    for kind in installer blade3; do
         docker run "${docker_args[@]}" \
             "ghcr.io/siderolabs/imager:${TALOS_VERSION}" \
             "${kind}" "${common_args[@]}"
     done
+
+    local compressed_image="${OUTPUT_DIR}/metal-arm64.raw.xz"
+    if [[ ! -f "${compressed_image}" ]]; then
+        echo "expected compressed image not found: ${compressed_image}" >&2
+        exit 1
+    fi
+
+    local sector_hex
+    sector_hex=$(
+        set +o pipefail
+        xz -dc "${compressed_image}" 2>/dev/null |
+            dd bs=512 skip=64 count=1 2>/dev/null |
+            od -An -tx1 |
+            tr -d '[:space:]'
+    )
+
+    if [[ -z "${sector_hex}" || "${sector_hex}" =~ ^0+$ ]]; then
+        echo "U-Boot verification failed: sector 64 is empty in ${compressed_image}" >&2
+        exit 1
+    fi
+
+    echo "verified U-Boot data at sector 64 in ${compressed_image}"
 
     if [[ -n "${temporary_registry_config}" ]]; then
         rm -f "${temporary_registry_config}"

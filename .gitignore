@@ -1,3 +1,14 @@
 go.work.sum
 _out
 output
+
+# Local credentials, logs, and the Rockchip USB loader.
+# The loader is not produced by this repository.
+.env
+log/
+rk3588_spl_loader_*.bin
+
+# Local hardware-audit captures.
+blade3-kernel-config.txt
+blade3-talos-modules.txt
+cozystack-compatibility-summary.txt
