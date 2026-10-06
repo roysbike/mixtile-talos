@@ -9,9 +9,9 @@ Mixtile Cluster Box.
 Image build and eMMC flashing stay here. Cozystack bootstrap, storage classes,
 and UI access scripts belong in the separate `cozystack-box-mixtile` project.
 
-## OpenMIOP Stack v0.1.0-rc.1
+## OpenMIOP Stack v0.1.0-rc.2
 
-This repository's release **v0.1.0-rc.1** is the Blade OS of the OpenMIOP
+This repository's release **v0.1.0-rc.2** is the Blade OS of the OpenMIOP
 stack: Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
 Mixtile Cluster Box over its PCIe switch, built into the installer image.
 
@@ -26,26 +26,23 @@ Mixtile Cluster Box over its PCIe switch, built into the installer image.
                                               Talos + openmiop, omi0 10.20.0.x
 ```
 
-| OpenMIOP Stack v0.1.0-rc.1 | |
+| OpenMIOP Stack v0.1.0-rc.2 | |
 | --- | --- |
 | Protocol | OpenMIOP v4 |
-| Blade driver | [pcie-ep-net v0.1.0-rc.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.1.0-rc.1) |
-| Blade OS | [mixtile-talos v0.1.0-rc.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.1) (this repository) |
-| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.1.0-rc.1](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.1.0-rc.1) |
+| Blade driver | [pcie-ep-net v0.1.0-rc.2](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.1.0-rc.2) |
+| Blade OS | [mixtile-talos v0.1.0-rc.2](https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.2) (this repository) |
+| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.1.0-rc.1](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.1.0-rc.1) (unchanged) |
 
-The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.1)
+The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.2)
 lists the installer image digest, the disk image, DTB, U-Boot, module and
 checksums. What changed: [CHANGELOG.md](CHANGELOG.md). Details of the
 openmiop integration: [docs/openmiop.md](docs/openmiop.md).
 
 ### Install or upgrade a Blade 3 node
 
-Installer for v0.1.0-rc.1 (immutable digest; the tag
-`ghcr.io/roysbike/mixtile-talos-installer:v0.1.0-rc.1` resolves to it):
-
-```
-ghcr.io/roysbike/mixtile-talos-installer@sha256:8f8ff82456673d943536087b1ec676bed9873a3f35d93555da30ac74afc489c6
-```
+Installer for v0.1.0-rc.2: use the immutable digest from the
+[release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.2);
+the tag `ghcr.io/roysbike/mixtile-talos-installer:v0.1.0-rc.2` resolves to it.
 
 1. Add the openmiop documents to the machine configuration (one address
    per blade; 10.20.0.1 is the BMC) and apply them without reboot:
@@ -79,18 +76,28 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:8f8ff82456673d943536087b1ec676be
 2. Upgrade (one node at a time; mind etcd quorum):
 
    ```sh
-   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:8f8ff82456673d943536087b1ec676bed9873a3f35d93555da30ac74afc489c6
+   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:<digest of v0.1.0-rc.2>
    ```
 
-   New nodes: write `metal-arm64.raw.xz` from the release (see
-   [Install from macOS](#install-from-macos)) and set
-   `machine.install.image` to the same reference.
+   New nodes: write `metal-arm64.raw.xz` **from this release** (see
+   [Install from macOS](#install-from-macos)); check that the console
+   shows `enabling system extension openmiop`. Then apply the machine
+   configuration with `machine.install.image` set to the same reference
+   and `machine.install.disk: /dev/mmcblk0`. Applying a configuration to a
+   node that booted an older raw image does **not** reinstall it
+   (`install sequence: 0 phase(s)`): run `talosctl upgrade --image ...` on
+   it afterwards.
+
+   A new control-plane node cannot join etcd while the cluster still lists
+   a dead member (`error adding member: etcdserver: unhealthy cluster`):
+   remove that member first (`talosctl etcd remove-member <id>`, after an
+   `etcd snapshot`).
 
 3. Verify:
 
    ```sh
    talosctl -n <node> read /proc/cmdline       # no module.sig_enforce
-   talosctl -n <node> get extensions           # openmiop 0.1.0-rc.1-v1.14.2
+   talosctl -n <node> get extensions           # openmiop 0.1.0-rc.2-v1.14.2
    talosctl -n <node> dmesg | grep openmiop    # link up, node N, peer M up
    talosctl -n <node> get links | grep omi0    # alias omi0 on enx<mac>, up
    ping -c3 -M do -s 8972 10.20.0.<node>       # from another fabric member
@@ -134,7 +141,7 @@ The final images use the Talos v1.14.2 kernel (6.18.54-talos) and include:
 - `ghcr.io/siderolabs/iscsi-tools:v0.2.0`
 - `ghcr.io/siderolabs/panfrost:20260916-v1.14.2`
 - `ghcr.io/siderolabs/rockchip-rknn:v1.14.2`
-- openmiop `0.1.0-rc.1-v1.14.2` (built by this repository)
+- openmiop `0.1.0-rc.2-v1.14.2` (built by this repository)
 
 DRBD and ZFS therefore match the running official Talos kernel release,
 module ABI and signing key.
