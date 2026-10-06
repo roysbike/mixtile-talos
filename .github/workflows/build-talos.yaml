@@ -58,6 +58,10 @@ jobs:
           tag=${REQUESTED_TAG:-ci-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::8}}
           echo "USERNAME=${owner}" >> "${GITHUB_ENV}"
           echo "IMAGE_TAG=${tag}" >> "${GITHUB_ENV}"
+          # Packages this workflow creates (and may therefore write).
+          echo "OVERLAY_NAME=sbc-mixtile-blade3-ci" >> "${GITHUB_ENV}"
+          echo "OPENMIOP_NAME=openmiop" >> "${GITHUB_ENV}"
+          echo "INSTALLER_IMAGE=ghcr.io/${owner}/mixtile-talos-installer:${tag}" >> "${GITHUB_ENV}"
 
       - name: Build overlay and Talos images
         run: ./build.sh all

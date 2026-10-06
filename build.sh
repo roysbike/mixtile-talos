@@ -11,6 +11,12 @@ REGISTRY=${REGISTRY:-ghcr.io}
 USERNAME=${USERNAME:-}
 IMAGE_TAG=${IMAGE_TAG:-v0.3.0}
 OUTPUT_DIR=${OUTPUT_DIR:-"${ROOT}/_out"}
+# Package names in ${REGISTRY}/${USERNAME}. CI uses names it created
+# itself: a GITHUB_TOKEN cannot write to packages pushed from elsewhere.
+OVERLAY_NAME=${OVERLAY_NAME:-sbc-mixtile-blade3}
+OPENMIOP_NAME=${OPENMIOP_NAME:-openmiop}
+# If set, the installer image is pushed there (for talosctl upgrade).
+INSTALLER_IMAGE=${INSTALLER_IMAGE:-}
 
 DRBD_EXTENSION=${DRBD_EXTENSION:-ghcr.io/siderolabs/drbd:9.3.4-${TALOS_VERSION}}
 ZFS_EXTENSION=${ZFS_EXTENSION:-ghcr.io/siderolabs/zfs:2.4.4-${TALOS_VERSION}}
@@ -66,7 +72,7 @@ build_overlay() {
         PLATFORM=linux/arm64 \
         PKGS="${PKGS}" \
         TOOLS="${TOOLS}" \
-        TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/sbc-mixtile-blade3:${IMAGE_TAG} --push"
+        TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/${OVERLAY_NAME}:${IMAGE_TAG} --push"
 }
 
 build_extension() {
@@ -74,7 +80,7 @@ build_extension() {
         PLATFORM=linux/arm64 \
         PKGS="${PKGS}" \
         TOOLS="${TOOLS}" \
-        TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/openmiop:${OPENMIOP_VERSION} --push"
+        TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/${OPENMIOP_NAME}:${OPENMIOP_VERSION} --push"
 }
 
 build_images() {
@@ -117,7 +123,7 @@ build_images() {
         --arch arm64
         --base-installer-image "ghcr.io/siderolabs/installer-base:${TALOS_VERSION}"
         --overlay-name mixtile-blade3
-        --overlay-image "${REGISTRY}/${USERNAME}/sbc-mixtile-blade3:${IMAGE_TAG}"
+        --overlay-image "${REGISTRY}/${USERNAME}/${OVERLAY_NAME}:${IMAGE_TAG}"
         --system-extension-image "${DRBD_EXTENSION}"
         --system-extension-image "${ZFS_EXTENSION}"
         --system-extension-image "${ISCSI_EXTENSION}"
@@ -127,7 +133,7 @@ build_images() {
 
     if [[ "${OPENMIOP}" == 1 ]]; then
         common_args+=(
-            --system-extension-image "${REGISTRY}/${USERNAME}/openmiop:${OPENMIOP_VERSION}"
+            --system-extension-image "${REGISTRY}/${USERNAME}/${OPENMIOP_NAME}:${OPENMIOP_VERSION}"
             --extra-kernel-arg -module.sig_enforce
         )
     fi
@@ -159,6 +165,14 @@ build_images() {
     fi
 
     echo "verified U-Boot data at sector 64 in ${compressed_image}"
+
+    if [[ -n "${INSTALLER_IMAGE}" ]]; then
+        local loaded
+        loaded=$(docker load -i "${OUTPUT_DIR}/installer-arm64.tar" | sed -n 's/^Loaded image: //p' | tail -1)
+        docker tag "${loaded}" "${INSTALLER_IMAGE}"
+        docker push "${INSTALLER_IMAGE}"
+        docker inspect --format '{{index .RepoDigests 0}}' "${INSTALLER_IMAGE}" | tee "${OUTPUT_DIR}/installer-image.txt"
+    fi
 
     if [[ -n "${temporary_registry_config}" ]]; then
         rm -f "${temporary_registry_config}"
