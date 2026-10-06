@@ -18,8 +18,10 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    # Native arm64: the openmiop extension builds the Talos kernel tree
+    # (vmlinux + modules_prepare), which is too slow under QEMU.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 300
 
     steps:
       - name: Check out sources
