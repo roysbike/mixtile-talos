@@ -3,6 +3,32 @@
 All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.0-rc.2] - 2026-10-06
+
+Driver fix release. Part of OpenMIOP Stack v0.1.0-rc.2 (protocol v4,
+unchanged). Kernel, DTB, U-Boot and the other extensions are unchanged.
+
+### Changed
+
+- openmiop 0.1.0-rc.2-v1.14.2 from roysbike/pcie-ep-net `8134fde`
+  (tag v0.1.0-rc.2).
+
+### Fixed
+
+- openmiop: peers could stay "connecting" after the BMC re-enumerated the
+  fabric and BAR addresses moved (blades removed or added); acks now wait
+  for a window to the peer's current BAR and senders retry with a new
+  token after 2 s. See the pcie-ep-net changelog.
+
+### Documentation
+
+- New nodes: a configuration applied to a node that booted an older raw
+  image does not reinstall it; `talosctl upgrade` does.
+- A new control plane cannot join etcd while a dead member is listed;
+  remove it first.
+- `talosctl get links omi0` does not resolve aliases; use
+  `talosctl get links | grep omi0`.
+
 ## [0.1.0-rc.1] - 2026-10-06
 
 First release candidate of Talos for the Mixtile Blade 3 with Cluster Box
@@ -111,4 +137,5 @@ DTB, extensions and openmiop driver source as this release.
 - Not hardware-tested: installing from the raw disk image of this build, NPU/GPU workloads (`rocket` and `panthor` load), VFIO, more
   than four blades.
 
+[0.1.0-rc.2]: https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.2
 [0.1.0-rc.1]: https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.1
