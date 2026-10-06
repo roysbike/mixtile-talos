@@ -35,10 +35,27 @@ extension=$(info openmiop-extension)
 [[ "${installer}" == *@sha256:* && "${overlay}" == *@sha256:* && "${extension}" == *@sha256:* ]] ||
     fail "BUILD-INFO lacks image digests"
 
-# Every published file must match the checksum the build recorded.
+# Every file that goes into the release must match the checksum the
+# build recorded.
 (cd "${OUT}" && for a in "${ASSETS[@]}"; do grep -E "  ${a}\$" SHA256SUMS; done) > "${OUT}/SHA256SUMS.release"
 [[ $(wc -l < "${OUT}/SHA256SUMS.release") -eq ${#ASSETS[@]} ]] || fail "SHA256SUMS does not cover every asset"
 (cd "${OUT}" && sha256sum -c SHA256SUMS.release)
+
+# Release names: openmiop-<version>-blade3-talos-<talos>-arm64.*
+talos=$(info talos)
+base="openmiop-${TAG#v}-blade3-talos-${talos#v}-arm64"
+rel=${OUT}/release
+rm -rf "${rel}" && mkdir -p "${rel}/${base}-boot-files"
+# _out is written by root-owned containers; copy (hard links are refused).
+cp "${OUT}/metal-arm64.raw.xz" "${rel}/${base}.raw.xz"
+cp "${OUT}/rk3588-mixtile-blade3.dtb" "${OUT}/u-boot-rockchip.bin" "${OUT}/openmiop-ep.ko" \
+   "${OUT}/openmiop-extension-manifest.yaml" "${rel}/${base}-boot-files/"
+tar -C "${rel}" --owner=0 --group=0 -czf "${rel}/${base}-boot-files.tar.gz" "${base}-boot-files"
+rm -rf "${rel}/${base}-boot-files"
+cp "${OUT}/BUILD-INFO.txt" "${rel}/BUILD-INFO.txt"
+# The renamed image must still be the one the build recorded.
+[[ "$(sha256sum < "${rel}/${base}.raw.xz")" == "$(sha256sum < "${OUT}/metal-arm64.raw.xz")" ]] || fail "image copy differs"
+(cd "${rel}" && sha256sum -- "${base}.raw.xz" "${base}-boot-files.tar.gz" BUILD-INFO.txt > SHA256SUMS)
 
 run_url="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-roysbike/mixtile-talos}/actions/runs/${GITHUB_RUN_ID:-local}"
 sed -e "s|@INSTALLER@|${installer}|g" \
@@ -49,14 +66,10 @@ sed -e "s|@INSTALLER@|${installer}|g" \
     -e "s|@RUN_URL@|${run_url}|g" \
     -e "s|@VERMAGIC@|$(info openmiop-ko-vermagic)|g" \
     -e "s|@OPENMIOP_REF@|$(info openmiop-ref)|g" \
+    -e "s|@IMAGE@|${base}.raw.xz|g" \
+    -e "s|@BOOTFILES@|${base}-boot-files.tar.gz|g" \
     "${NOTES_TEMPLATE}" > "${OUT}/release-notes.md"
 ! grep -n '@[A-Z_]*@' "${OUT}/release-notes.md" || fail "unfilled placeholder in the notes"
-
-mkdir -p "${OUT}/release"
-# _out is written by root-owned containers; copy (hard links are refused).
-for a in "${ASSETS[@]}"; do cp "${OUT}/${a}" "${OUT}/release/${a}"; done
-cp "${OUT}/SHA256SUMS.release" "${OUT}/release/SHA256SUMS"
-(cd "${OUT}/release" && sha256sum -c SHA256SUMS)
 
 prerelease=()
 [[ "${TAG}" == *-* ]] && prerelease=(--prerelease)

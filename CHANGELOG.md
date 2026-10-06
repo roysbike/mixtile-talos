@@ -10,8 +10,13 @@ unchanged). Kernel, DTB, U-Boot and the other extensions are unchanged.
 
 ### Changed
 
-- openmiop 0.1.0-rc.2-v1.14.2 from roysbike/pcie-ep-net `8134fde`
-  (tag v0.1.0-rc.2).
+- openmiop 0.1.0-rc.2-v1.14.2 from roysbike/pcie-ep-net `8134fde` (driver
+  source identical to tag v0.1.0-rc.2, `f9de420`, which only adds
+  packaging).
+- Release assets renamed: `openmiop-<version>-blade3-talos-<talos>-arm64.raw.xz`,
+  `…-boot-files.tar.gz` (DTB, U-Boot, module, extension manifest),
+  `BUILD-INFO.txt`, `SHA256SUMS`; the installer stays
+  `ghcr.io/roysbike/mixtile-talos-installer:<tag>` (use the digest).
 
 ### Fixed
 
