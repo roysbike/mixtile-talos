@@ -53,8 +53,10 @@ sed -e "s|@INSTALLER@|${installer}|g" \
 ! grep -n '@[A-Z_]*@' "${OUT}/release-notes.md" || fail "unfilled placeholder in the notes"
 
 mkdir -p "${OUT}/release"
-for a in "${ASSETS[@]}"; do ln -f "${OUT}/${a}" "${OUT}/release/${a}"; done
+# _out is written by root-owned containers; copy (hard links are refused).
+for a in "${ASSETS[@]}"; do cp "${OUT}/${a}" "${OUT}/release/${a}"; done
 cp "${OUT}/SHA256SUMS.release" "${OUT}/release/SHA256SUMS"
+(cd "${OUT}/release" && sha256sum -c SHA256SUMS)
 
 prerelease=()
 [[ "${TAG}" == *-* ]] && prerelease=(--prerelease)
