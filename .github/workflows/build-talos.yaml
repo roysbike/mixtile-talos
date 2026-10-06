@@ -1,6 +1,13 @@
 name: Build Talos for Mixtile Blade 3
 
 on:
+  # workflow_dispatch only works once this file is on the default branch;
+  # development branches build on push.
+  push:
+    branches:
+      - "claude/**"
+    paths-ignore:
+      - "**.md"
   workflow_dispatch:
     inputs:
       image_tag:
