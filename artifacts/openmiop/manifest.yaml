@@ -1,0 +1,13 @@
+version: v1alpha1
+metadata:
+  name: openmiop
+  version: "@VERSION@"
+  author: roysbike
+  description: |
+    openmiop-ep: Ethernet (omi0) over the Mixtile Cluster Box PCIe fabric, with the
+    RK3588 PCIe3 controller as endpoint. Built for Talos v1.14.2, Linux 6.18.54-talos.
+    The module is not signed by the Talos build key; the image must drop
+    module.sig_enforce.
+  compatibility:
+    talos:
+      version: ">= v1.14.2"

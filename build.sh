@@ -15,10 +15,18 @@ OUTPUT_DIR=${OUTPUT_DIR:-"${ROOT}/_out"}
 DRBD_EXTENSION=${DRBD_EXTENSION:-ghcr.io/siderolabs/drbd:9.3.4-${TALOS_VERSION}}
 ZFS_EXTENSION=${ZFS_EXTENSION:-ghcr.io/siderolabs/zfs:2.4.4-${TALOS_VERSION}}
 ISCSI_EXTENSION=${ISCSI_EXTENSION:-ghcr.io/siderolabs/iscsi-tools:v0.2.0}
+PANFROST_EXTENSION=${PANFROST_EXTENSION:-ghcr.io/siderolabs/panfrost:20260916-${TALOS_VERSION}}
+RKNN_EXTENSION=${RKNN_EXTENSION:-ghcr.io/siderolabs/rockchip-rknn:${TALOS_VERSION}}
+
+# openmiop: Ethernet over the Cluster Box PCIe fabric (pcie-ep-net). The
+# version must match openmiop_version in Pkgfile. Set OPENMIOP=0 to build
+# an image without it.
+OPENMIOP=${OPENMIOP:-1}
+OPENMIOP_VERSION=${OPENMIOP_VERSION:-$(awk '/^  openmiop_version:/{print $2}' "${ROOT}/Pkgfile")}
 
 usage() {
     cat <<EOF
-Usage: USERNAME=<registry namespace> $0 [overlay|image|all]
+Usage: USERNAME=<registry namespace> $0 [overlay|extension|image|all]
 
 Environment:
   TALOS_VERSION=${TALOS_VERSION}
@@ -27,8 +35,15 @@ Environment:
   REGISTRY=${REGISTRY}
   IMAGE_TAG=${IMAGE_TAG}
   OUTPUT_DIR=${OUTPUT_DIR}
+  OPENMIOP=${OPENMIOP} (OPENMIOP_VERSION=${OPENMIOP_VERSION})
 
-The overlay is pushed because the Talos imager resolves overlays as OCI images.
+The overlay and the openmiop extension are pushed because the Talos
+imager resolves them as OCI images.
+
+With OPENMIOP=1 the image drops the module.sig_enforce kernel argument:
+openmiop-ep.ko is built against the exact Talos kernel tree but cannot
+be signed with the Talos build key, which is discarded after each
+official kernel build.
 EOF
 }
 
@@ -52,6 +67,14 @@ build_overlay() {
         PKGS="${PKGS}" \
         TOOLS="${TOOLS}" \
         TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/sbc-mixtile-blade3:${IMAGE_TAG} --push"
+}
+
+build_extension() {
+    make target-openmiop \
+        PLATFORM=linux/arm64 \
+        PKGS="${PKGS}" \
+        TOOLS="${TOOLS}" \
+        TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/openmiop:${OPENMIOP_VERSION} --push"
 }
 
 build_images() {
@@ -98,7 +121,16 @@ build_images() {
         --system-extension-image "${DRBD_EXTENSION}"
         --system-extension-image "${ZFS_EXTENSION}"
         --system-extension-image "${ISCSI_EXTENSION}"
+        --system-extension-image "${PANFROST_EXTENSION}"
+        --system-extension-image "${RKNN_EXTENSION}"
     )
+
+    if [[ "${OPENMIOP}" == 1 ]]; then
+        common_args+=(
+            --system-extension-image "${REGISTRY}/${USERNAME}/openmiop:${OPENMIOP_VERSION}"
+            --extra-kernel-arg -module.sig_enforce
+        )
+    fi
 
     for kind in installer blade3; do
         docker run "${docker_args[@]}" \
@@ -142,7 +174,7 @@ main() {
             usage
             return
             ;;
-        overlay|image|all) ;;
+        overlay|extension|image|all) ;;
         *)
             usage >&2
             exit 2
@@ -153,9 +185,11 @@ main() {
 
     case "${action}" in
         overlay) build_overlay ;;
+        extension) build_extension ;;
         image) build_images ;;
         all)
             build_overlay
+            [[ "${OPENMIOP}" == 1 ]] && build_extension
             build_images
             ;;
     esac
