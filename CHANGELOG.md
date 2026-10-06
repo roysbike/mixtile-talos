@@ -93,6 +93,7 @@ DTB, extensions and openmiop driver source as this release.
 | Talos ↔ Talos TCP | 6.48 / 6.73 Gbit/s, bidirectional 4.45 + 4.51 |
 | SHA-256 integrity | 1 GiB Debian→Talos, 512 MiB Talos→Debian, 512 MiB Talos→Talos: identical |
 | Release image | inspected in CI (`verify-installer.sh`); the same check passes on ci-6 |
+| Release installer on hardware (after tagging) | `talosctl upgrade` of .201 and .204 to `sha256:8f8ff824…`: etcd, kubelet, openmiop peers up, `omi0` up, NVMe 8 GT/s x2, ZFS ONLINE, ping/jumbo from Debian blades and BMC |
 
 ### Known limitations
 
@@ -107,10 +108,7 @@ DTB, extensions and openmiop driver source as this release.
 - Upgrading a node whose pods hold volumes on failed storage: the drain
   can fail and the reboot can hang unmounting; `--drain=false` and a BMC
   hardware reset (`nodectl reset`) were needed.
-- Not hardware-tested: booting this exact release build (its content
-  equals the tested ci-6 except version labels and the pcie-ep-net pin
-  with identical driver source), installing from the raw disk image of
-  this build, NPU/GPU workloads (`rocket` and `panthor` load), VFIO, more
+- Not hardware-tested: installing from the raw disk image of this build, NPU/GPU workloads (`rocket` and `panthor` load), VFIO, more
   than four blades.
 
 [0.1.0-rc.1]: https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.1

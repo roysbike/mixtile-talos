@@ -92,7 +92,7 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:8f8ff82456673d943536087b1ec676be
    talosctl -n <node> read /proc/cmdline       # no module.sig_enforce
    talosctl -n <node> get extensions           # openmiop 0.1.0-rc.1-v1.14.2
    talosctl -n <node> dmesg | grep openmiop    # link up, node N, peer M up
-   talosctl -n <node> get links omi0           # up
+   talosctl -n <node> get links | grep omi0    # alias omi0 on enx<mac>, up
    ping -c3 -M do -s 8972 10.20.0.<node>       # from another fabric member
    ```
 
