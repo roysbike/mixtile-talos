@@ -400,16 +400,59 @@
 	status = "okay";
 };
 
+/*
+ * PCIe3 PHY split as on the vendor kernel: PHY lanes 0-1 belong to
+ * pcie3x4 (fe150000), which is wired to the Cluster Box connector and
+ * runs as an endpoint behind the ASM2824 switch; lanes 2-3 belong to
+ * pcie3x2 (fe160000), the M.2 NVMe slot. In aggregation mode the NVMe
+ * trained at 2.5 GT/s x2 under pcie3x4.
+ *
+ * The Cluster Box and the blade do not share a reference clock, so
+ * the receivers must not use common-refclk mode. The vendor kernel
+ * leaves it off on all four lanes (lane CON1 = 0x60), as does the
+ * upstream Rock 5B endpoint overlay.
+ */
 &pcie30phy {
+	data-lanes = <1 1 2 2>;
+	rockchip,rx-common-refclk-mode = <0 0 0 0>;
 	status = "okay";
 };
 
 &pcie3x4 {
+	status = "disabled";
+};
+
+/*
+ * Endpoint for openmiop (system extension). Own compatible: the
+ * in-kernel EPC driver for rockchip,rk3588-pcie-ep is not part of the
+ * Talos kernel, and openmiop drives the controller itself. No reset
+ * GPIO: the endpoint must not drive PERST.
+ */
+&pcie3x4_ep {
+	compatible = "openmiop,rk3588-pcie-ep";
+	num-lanes = <2>;
+	vpcie3v3-supply = <&vcc3v3_pcie30>;
+	status = "okay";
+};
+
+&pcie3x2 {
 	reset-gpios = <&gpio4 RK_PB6 GPIO_ACTIVE_HIGH>;
 	vpcie3v3-supply = <&vcc3v3_pcie30>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie3_rst>;
 	status = "okay";
+};
+
+/*
+ * The vendor kernel runs PCIe without the MMU-600, and so does the
+ * upstream endpoint overlay: in endpoint mode the inbound BAR traffic
+ * of the RC and the other blades and the eDMA reads carry stream IDs
+ * that no Linux device owns, and the SMMU (bypass disabled) aborts
+ * them. PCIe devices on this board (NVMe, RTL8125) then DMA without
+ * IOMMU translation.
+ */
+&mmu600_pcie {
+	status = "disabled";
 };
 
 &pd_gpu {
