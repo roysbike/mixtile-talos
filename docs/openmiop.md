@@ -88,7 +88,7 @@ The BMC is `10.20.0.1`. Pod and service CIDRs of the cluster
 6. Verify: `talosctl -n <node> read /proc/cmdline` (no
    `module.sig_enforce`), `get extensions` (openmiop), `dmesg | grep
    openmiop` (link up, node index, peers up), NVMe on `0001:11:00.0` at
-   8 GT/s, `get links omi0`, ping and `talosctl -n 10.20.0.<x> version`
+   8 GT/s, `get links | grep omi0`, ping and `talosctl -n 10.20.0.<x> version`
    over the fabric, management network unchanged.
 
 ## Rollback
