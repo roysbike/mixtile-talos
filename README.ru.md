@@ -2,6 +2,12 @@
 
 [English](README.md) · [Русский](README.ru.md)
 
+> **Релиз v0.1.0-rc.1 (OpenMIOP Stack v0.1.0-rc.1, протокол v4):** образ Talos
+> со встроенным openmiop (Ethernet `omi0` между блейдами Cluster Box по
+> PCIe). Установка, обновление по digest, проверка и ограничения — в
+> [README.md](README.md#openmiop-stack-v010-rc1), [CHANGELOG.md](CHANGELOG.md)
+> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.1).
+
 Этот репозиторий собирает ARM64 SBC overlay и загрузочные образы Talos Linux
 `v1.14.2` для Mixtile Blade 3 (RK3588), в том числе для плат в Mixtile Cluster Box.
 

@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - "claude/**"
+    tags:
+      - "v*"
     paths-ignore:
       - "**.md"
   workflow_dispatch:
@@ -16,7 +18,7 @@ on:
         default: ""
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 concurrency:
@@ -56,6 +58,8 @@ jobs:
         run: |
           owner=${GITHUB_REPOSITORY_OWNER,,}
           tag=${REQUESTED_TAG:-ci-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::8}}
+          # A release tag names the images after the tag.
+          [[ "${GITHUB_REF}" == refs/tags/v* ]] && tag=${GITHUB_REF_NAME}
           echo "USERNAME=${owner}" >> "${GITHUB_ENV}"
           echo "IMAGE_TAG=${tag}" >> "${GITHUB_ENV}"
           # Packages this workflow creates (and may therefore write).
@@ -65,6 +69,21 @@ jobs:
 
       - name: Build overlay and Talos images
         run: ./build.sh all
+
+      - name: Inspect the installer image
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q squashfs-tools zstd device-tree-compiler
+          ./scripts/verify-installer.sh _out
+          grep -qx "commit: ${GITHUB_SHA}" _out/BUILD-INFO.txt
+          grep -qx "commit-dirty: no" _out/BUILD-INFO.txt
+          (cd _out && sha256sum -c SHA256SUMS)
+
+      - name: Publish the GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/publish-release.sh "${GITHUB_REF_NAME}" _out
 
       - name: Upload boot artifacts
         uses: actions/upload-artifact@v4

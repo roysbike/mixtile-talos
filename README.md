@@ -9,11 +9,102 @@ Mixtile Cluster Box.
 Image build and eMMC flashing stay here. Cozystack bootstrap, storage classes,
 and UI access scripts belong in the separate `cozystack-box-mixtile` project.
 
+## OpenMIOP Stack v0.1.0-rc.1
+
+This repository's release **v0.1.0-rc.1** is the Blade OS of the OpenMIOP
+stack: Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
+Mixtile Cluster Box over its PCIe switch, built into the installer image.
+
+```
+        Cluster Box BMC (MT7620A, OpenWrt)  — openmiop-rc helper, omi0 10.20.0.1
+                       |
+                    ASM2824 PCIe switch
+                       |
+                  PCIe fabric (Gen3 x2 per blade)
+              /      /        \       \
+           B1      B2          B3      B4     Mixtile Blade 3 (RK3588)
+                                              Talos + openmiop, omi0 10.20.0.x
+```
+
+| OpenMIOP Stack v0.1.0-rc.1 | |
+| --- | --- |
+| Protocol | OpenMIOP v4 |
+| Blade driver | [pcie-ep-net v0.1.0-rc.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.1.0-rc.1) |
+| Blade OS | [mixtile-talos v0.1.0-rc.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.1) (this repository) |
+| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.1.0-rc.1](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.1.0-rc.1) |
+
+The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.1)
+lists the installer image digest, the disk image, DTB, U-Boot, module and
+checksums. What changed: [CHANGELOG.md](CHANGELOG.md). Details of the
+openmiop integration: [docs/openmiop.md](docs/openmiop.md).
+
+### Install or upgrade a Blade 3 node
+
+Use the installer by its digest (from the release page or `BUILD-INFO.txt`);
+`ghcr.io/roysbike/mixtile-talos-installer:v0.1.0-rc.1` is the same image
+by tag.
+
+1. Add the openmiop documents to the machine configuration (one address
+   per blade; 10.20.0.1 is the BMC) and apply them without reboot:
+
+   ```yaml
+   # omi.yaml
+   machine:
+     kernel:
+       modules:
+         - name: openmiop_ep
+   ---
+   apiVersion: v1alpha1
+   kind: LinkAliasConfig
+   name: omi0
+   selector:
+     match: link.driver == "openmiop-ep"
+   ---
+   apiVersion: v1alpha1
+   kind: LinkConfig
+   name: omi0
+   up: true
+   mtu: 9000
+   addresses:
+     - address: 10.20.0.<last octet of the management address>/24
+   ```
+
+   ```sh
+   talosctl -n <node> patch mc --mode no-reboot -p @omi.yaml
+   ```
+
+2. Upgrade (one node at a time; mind etcd quorum):
+
+   ```sh
+   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:<digest from the release>
+   ```
+
+   New nodes: write `metal-arm64.raw.xz` from the release (see
+   [Install from macOS](#install-from-macos)) and set
+   `machine.install.image` to the same reference.
+
+3. Verify:
+
+   ```sh
+   talosctl -n <node> read /proc/cmdline       # no module.sig_enforce
+   talosctl -n <node> get extensions           # openmiop 0.1.0-rc.1-v1.14.2
+   talosctl -n <node> dmesg | grep openmiop    # link up, node N, peer M up
+   talosctl -n <node> get links omi0           # up
+   ping -c3 -M do -s 8972 10.20.0.<node>       # from another fabric member
+   ```
+
+Rollback: `talosctl -n <node> rollback`.
+
+Known limitations: openmiop RX is polled (no interrupt-driven RX), no
+multiqueue, Talos receives ~20 % slower than Debian, BMC re-enumeration
+pauses the fabric ~1-2 s when a blade appears; see [CHANGELOG.md](CHANGELOG.md).
+
 ## Source baseline
 
 - Talos and imager: `v1.14.2`
 - Talos packages: `v1.14.0-37-g6c312e4`
-- Linux: `6.18.54`, the unmodified Talos ARM64 kernel
+- Linux: `6.18.54-talos`, the Talos ARM64 kernel configuration (rebuilt at the
+  same PKGS commit so the openmiop module matches its ABI)
 - U-Boot: `v2026.07`
 - Board DTS and U-Boot configuration: Armbian mainline Blade 3 port
 - TF-A: `lts-v2.14.6`
@@ -33,11 +124,14 @@ offset; it does not treat the Turing RK1 DTB as interchangeable with Blade 3.
 - the Talos 1.14 overlay installer;
 - the raw-image profile.
 
-The final images use the official Talos 1.14.1 kernel and include:
+The final images use the Talos v1.14.2 kernel (6.18.54-talos) and include:
 
 - `ghcr.io/siderolabs/drbd:9.3.4-v1.14.2`
 - `ghcr.io/siderolabs/zfs:2.4.4-v1.14.2`
 - `ghcr.io/siderolabs/iscsi-tools:v0.2.0`
+- `ghcr.io/siderolabs/panfrost:20260916-v1.14.2`
+- `ghcr.io/siderolabs/rockchip-rknn:v1.14.2`
+- openmiop `0.1.0-rc.1-v1.14.2` (built by this repository)
 
 DRBD and ZFS therefore match the running official Talos kernel release,
 module ABI and signing key.
@@ -77,13 +171,17 @@ GitHub Actions workflow.
 
 ### GitHub Actions
 
-Push this branch to GitHub, open **Actions → Build Talos for Mixtile Blade 3
-→ Run workflow**. The workflow:
+Pushes to `claude/**` branches and `v*` tags run the workflow on a native
+arm64 runner. It:
 
-1. enables ARM64 emulation and Buildx;
-2. publishes the temporary overlay to the repository owner's GHCR namespace;
-3. builds installer and raw metal images;
-4. uploads `_out/` as a workflow artifact for 14 days.
+1. builds the overlay and the openmiop extension and pushes them to the
+   repository owner's GHCR namespace;
+2. builds installer and raw metal images and pushes the installer;
+3. inspects the installer (`scripts/verify-installer.sh`) and checks
+   `BUILD-INFO.txt` (commit, clean tree) and `SHA256SUMS`;
+4. uploads `_out/` as a workflow artifact for 14 days;
+5. on a `v*` tag, publishes the GitHub release
+   (`scripts/publish-release.sh`, notes from `docs/release-notes/<tag>.md`).
 
 No personal registry token is needed: the workflow uses `GITHUB_TOKEN` with
 `packages: write`.
