@@ -32,7 +32,7 @@ OPENMIOP_VERSION=${OPENMIOP_VERSION:-$(awk '/^  openmiop_version:/{print $2}' "$
 
 usage() {
     cat <<EOF
-Usage: USERNAME=<registry namespace> $0 [overlay|extension|image|all]
+Usage: USERNAME=<registry namespace> $0 [overlay|extension|image|artifacts|all]
 
 Environment:
   TALOS_VERSION=${TALOS_VERSION}
@@ -180,6 +180,55 @@ build_images() {
     fi
 }
 
+# Release files next to the images: the DTB and U-Boot from the overlay,
+# the openmiop module and manifest, BUILD-INFO.txt (commit, versions, image
+# digests) and SHA256SUMS. The targets are already built: buildx reuses the
+# cache and only exports them.
+export_artifacts() {
+    local out=${OUTPUT_DIR}
+    local tmp
+    tmp=$(mktemp -d)
+
+    make target-sbc-mixtile-blade3 PLATFORM=linux/arm64 PKGS="${PKGS}" TOOLS="${TOOLS}" \
+        TARGET_ARGS="--output type=local,dest=${tmp}/overlay"
+    cp "${tmp}/overlay/artifacts/arm64/dtb/rockchip/rk3588-mixtile-blade3.dtb" "${out}/"
+    cp "${tmp}/overlay/artifacts/arm64/u-boot/mixtile-blade3/u-boot-rockchip.bin" "${out}/"
+
+    if [[ "${OPENMIOP}" == 1 ]]; then
+        make target-openmiop PLATFORM=linux/arm64 PKGS="${PKGS}" TOOLS="${TOOLS}" \
+            TARGET_ARGS="--output type=local,dest=${tmp}/openmiop"
+        cp "$(find "${tmp}/openmiop" -name openmiop-ep.ko)" "${out}/"
+        cp "${tmp}/openmiop/manifest.yaml" "${out}/openmiop-extension-manifest.yaml"
+    fi
+
+    digest() {
+        docker buildx imagetools inspect "$1" 2>/dev/null | awk '/^Digest:/{print $2; exit}'
+    }
+    local overlay="${REGISTRY}/${USERNAME}/${OVERLAY_NAME}:${IMAGE_TAG}"
+    local extension="${REGISTRY}/${USERNAME}/${OPENMIOP_NAME}:${OPENMIOP_VERSION}"
+    {
+        echo "commit: $(git -C "${ROOT}" rev-parse HEAD)"
+        echo "commit-dirty: $(git -C "${ROOT}" status --porcelain | grep -q . && echo yes || echo no)"
+        echo "talos: ${TALOS_VERSION}"
+        echo "pkgs: ${PKGS}"
+        echo "tools: ${TOOLS}"
+        echo "kernel: $(awk '/^  linux_version:/{print $2}' "${ROOT}/Pkgfile")-talos"
+        echo "openmiop-version: ${OPENMIOP_VERSION}"
+        echo "openmiop-ref: $(awk '/^  openmiop_ref:/{print $2}' "${ROOT}/Pkgfile")"
+        echo "overlay: ${overlay}@$(digest "${overlay}")"
+        [[ "${OPENMIOP}" == 1 ]] && echo "openmiop-extension: ${extension}@$(digest "${extension}")"
+        [[ -f "${out}/installer-image.txt" ]] && echo "installer: $(cat "${out}/installer-image.txt")"
+        echo "extensions: ${DRBD_EXTENSION} ${ZFS_EXTENSION} ${ISCSI_EXTENSION} ${PANFROST_EXTENSION} ${RKNN_EXTENSION}"
+    } > "${out}/BUILD-INFO.txt"
+    if [[ "${OPENMIOP}" == 1 ]]; then
+        echo "openmiop-ko-vermagic: $(strings "${out}/openmiop-ep.ko" | sed -n 's/^vermagic=//p')" >> "${out}/BUILD-INFO.txt"
+    fi
+
+    (cd "${out}" && sha256sum -- *.raw.xz *.tar *.dtb *.bin *.ko *.yaml BUILD-INFO.txt 2>/dev/null > SHA256SUMS)
+    cat "${out}/BUILD-INFO.txt" "${out}/SHA256SUMS"
+    rm -rf "${tmp}"
+}
+
 main() {
     local action=${1:-all}
 
@@ -188,7 +237,7 @@ main() {
             usage
             return
             ;;
-        overlay|extension|image|all) ;;
+        overlay|extension|image|artifacts|all) ;;
         *)
             usage >&2
             exit 2
@@ -201,10 +250,12 @@ main() {
         overlay) build_overlay ;;
         extension) build_extension ;;
         image) build_images ;;
+        artifacts) export_artifacts ;;
         all)
             build_overlay
             [[ "${OPENMIOP}" == 1 ]] && build_extension
             build_images
+            export_artifacts
             ;;
     esac
 }
