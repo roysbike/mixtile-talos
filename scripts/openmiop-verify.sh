@@ -30,14 +30,16 @@ dmesg=$(t dmesg)
 echo "$dmesg" | grep -E "openmiop-ep" | grep -E "phy mode|link up|node index|peer . up|omi0 mac" | tail -6 | sed 's/^/    /'
 echo "$dmesg" | grep -q "openmiop-ep.*link up"; check "endpoint link up" $?
 echo "$dmesg" | grep -q "openmiop-ep.*node index"; check "activated by the Cluster Box" $?
-echo "$dmesg" | grep -qiE "openmiop.*(oops|bug|failed|did not)"; check "no openmiop errors" $((1 - $?))
+# "module verification failed" is expected: the module is unsigned.
+echo "$dmesg" | grep -iE "openmiop.*(oops|bug|failed|did not)" | grep -qv "module verification failed"; check "no openmiop errors" $((1 - $?))
 echo "$dmesg" | grep -qE "rcu: .*stall|soft lockup|Internal error: Oops| BUG: "; check "no stalls/oopses" $((1 - $?))
 
 for f in current_link_speed current_link_width; do
 	printf '  nvme %s: %s\n' "$f" "$(t read /sys/bus/pci/devices/0001:11:00.0/$f)"
 done
 t get disks | grep -q nvme0n1; check "NVMe present" $?
-t get links omi0 >/dev/null; check "omi0 link" $?
-t get addresses | grep -E "omi0" | sed 's/^/    /'
+# udev names the link enx<mac>; LinkAliasConfig gives it the alias omi0.
+t get links | grep -E " omi0 " | grep -q " up "; check "omi0 link up (alias)" $?
+t get addresses | grep -E "10\.20\.0\." | sed 's/^/    /'
 t get addresses | grep -E "end0|enP" | head -2 | sed 's/^/    /'
 exit $ok

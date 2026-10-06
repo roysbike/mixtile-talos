@@ -41,11 +41,20 @@ x86 host the kernel stage runs under emulation and takes hours).
 
 ## Machine configuration
 
+udev names the interface `enx<MAC>` (Talos predictable names), so a
+`LinkAliasConfig` gives it the name `omi0` by driver:
+
 ```yaml
 machine:
   kernel:
     modules:
       - name: openmiop_ep
+---
+apiVersion: v1alpha1
+kind: LinkAliasConfig
+name: omi0
+selector:
+  match: link.driver == "openmiop-ep"
 ---
 apiVersion: v1alpha1
 kind: LinkConfig
@@ -67,6 +76,12 @@ The BMC is `10.20.0.1`. Pod and service CIDRs of the cluster
    `get extensions`, the installer image in the machine config.
 3. Apply the configuration above (`talosctl -n <node> patch mc --mode no-reboot -p @omi.yaml`).
 4. `talosctl -n <node> upgrade --image ghcr.io/<owner>/mixtile-talos-installer:<tag>`.
+   On the Cluster Box nodes (2026-10-06) the drain failed and the
+   reboot then hung unmounting CSI volumes whose backing NVMe had
+   failed. What worked: `--drain=false` (the node stays cordoned from
+   the failed drain), and when the sequence hung in `unmountPodMounts`,
+   a hardware reset from the BMC (`nodectl reset -n <slot>`); the new
+   image was already installed and booted. Uncordon afterwards.
 5. On the Cluster Box: the third endpoint appears; if the bridge windows
    are too small, `openmiop-rc` re-enumerates the switch (all P2P traffic
    pauses for ~1.5 s).
