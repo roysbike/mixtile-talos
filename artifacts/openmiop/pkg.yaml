@@ -1,0 +1,44 @@
+# openmiop (pcie-ep-net) as a Talos system extension: omi0, Ethernet over
+# the Mixtile Cluster Box PCIe fabric. Built against the exact Talos
+# kernel tree from talos-kernel-build, with the Talos LLVM toolchain.
+name: openmiop
+variant: scratch
+shell: /bin/bash
+dependencies:
+  - stage: base
+  - stage: talos-kernel-build
+  - image: "{{ .BUILD_ARG_TOOLS_PREFIX }}/llvm:{{ .BUILD_ARG_TOOLS }}"
+steps:
+  - sources:
+      - url: https://github.com/roysbike/pcie-ep-net/archive/{{ .openmiop_ref }}.tar.gz
+        destination: openmiop.tar.gz
+        sha256: "{{ .openmiop_sha256 }}"
+        sha512: "{{ .openmiop_sha512 }}"
+    env:
+      ARCH: arm64
+      LLVM: 1
+    prepare:
+      - |
+        tar -xzf openmiop.tar.gz --strip-components=1
+        rm openmiop.tar.gz
+    build:
+      - |
+        make -C /src M=$(pwd)/drivers/openmiop modules
+    install:
+      - |
+        krel=$(cat /src/include/config/kernel.release)
+        mkdir -p /rootfs/usr/lib/modules/${krel}/extras
+        install -m 0644 drivers/openmiop/openmiop-ep.ko /rootfs/usr/lib/modules/${krel}/extras/
+        llvm-strip --strip-debug /rootfs/usr/lib/modules/${krel}/extras/openmiop-ep.ko
+        sed -e "s/@VERSION@/{{ .openmiop_version }}/" /pkg/manifest.yaml > /rootfs/manifest.yaml
+    test:
+      - |
+        ko=$(find /rootfs/usr/lib/modules -name openmiop-ep.ko)
+        grep -aq "vermagic=6.18.54-talos SMP mod_unload modversions aarch64" "$ko"
+        grep -aq "license=GPL" "$ko"
+        grep -q "@VERSION@" /rootfs/manifest.yaml && exit 1 || true
+finalize:
+  - from: /rootfs/usr
+    to: /rootfs/usr
+  - from: /rootfs/manifest.yaml
+    to: /manifest.yaml
