@@ -225,5 +225,8 @@ negotiation happens before Linux starts. For the first boot, use UART and a
 known-good power source, and do not overwrite the working boot medium until
 PCIe, NVMe and Ethernet have been observed.
 
-MIOP/Cluster Box endpoint support is intentionally not included. Until that
-driver is ported to `6.18.54-talos`, nodes communicate over ordinary Ethernet.
+Cluster Box endpoint support comes from the open `openmiop` driver
+(<https://github.com/roysbike/pcie-ep-net>), packaged here as a system
+extension together with the device tree changes it needs. See
+[docs/openmiop.md](docs/openmiop.md) for what changes, the build, the
+canary procedure and rollback.
