@@ -40,9 +40,12 @@ openmiop integration: [docs/openmiop.md](docs/openmiop.md).
 
 ### Install or upgrade a Blade 3 node
 
-Installer for v0.1.0-rc.2: use the immutable digest from the
-[release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.2);
-the tag `ghcr.io/roysbike/mixtile-talos-installer:v0.1.0-rc.2` resolves to it.
+Installer for v0.1.0-rc.2 (immutable digest; the tag
+`ghcr.io/roysbike/mixtile-talos-installer:v0.1.0-rc.2` resolves to it):
+
+```
+ghcr.io/roysbike/mixtile-talos-installer@sha256:0d72d2669d9b6cb0a0467eab3b86e10f42889e26a7d87836952e061ae0f8b72a
+```
 
 1. Add the openmiop documents to the machine configuration (one address
    per blade; 10.20.0.1 is the BMC) and apply them without reboot:
@@ -76,10 +79,10 @@ the tag `ghcr.io/roysbike/mixtile-talos-installer:v0.1.0-rc.2` resolves to it.
 2. Upgrade (one node at a time; mind etcd quorum):
 
    ```sh
-   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:<digest of v0.1.0-rc.2>
+   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:0d72d2669d9b6cb0a0467eab3b86e10f42889e26a7d87836952e061ae0f8b72a
    ```
 
-   New nodes: write `metal-arm64.raw.xz` **from this release** (see
+   New nodes: write `openmiop-0.1.0-rc.2-blade3-talos-1.14.2-arm64.raw.xz` **from this release** (see
    [Install from macOS](#install-from-macos)); check that the console
    shows `enabling system extension openmiop`. Then apply the machine
    configuration with `machine.install.image` set to the same reference
