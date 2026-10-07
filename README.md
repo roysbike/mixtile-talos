@@ -76,7 +76,7 @@ use the immutable digest from the
 2. Upgrade (one node at a time; mind etcd quorum):
 
    ```sh
-   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:0d72d2669d9b6cb0a0467eab3b86e10f42889e26a7d87836952e061ae0f8b72a
+   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.2.0-rc.1 --stage --drain=false
    ```
 
    New nodes: write `openmiop-0.2.0-rc.1-blade3-talos-1.14.2-arm64.raw.xz` **from this release** (see
