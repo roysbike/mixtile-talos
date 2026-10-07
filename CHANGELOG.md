@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- `blade3-leds` module in the openmiop extension: the Blade 3 RTL8125
+  port LEDs now light at any link speed and blink on activity (from
+  reset they only show 10/100/1000 Mbit/s activity on the wired LEDs, so
+  a 2.5G port stayed dark after boot). Loaded with r8169 by PCI ID;
+  `mode=` sets the LED selector.
+
 ## [0.2.0-rc.1] - 2026-10-08
 
 openmiop v0.2: interrupts and multiqueue. Part of OpenMIOP Stack

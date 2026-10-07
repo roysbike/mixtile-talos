@@ -8,6 +8,7 @@ metadata:
     RK3588 PCIe3 controller as endpoint. Built for Talos v1.14.2, Linux 6.18.54-talos.
     The module is not signed by the Talos build key; the image must drop
     module.sig_enforce.
+    blade3-leds: activity LEDs for the Blade 3 RTL8125 ports (loaded with r8169).
   compatibility:
     talos:
       version: ">= v1.14.2"

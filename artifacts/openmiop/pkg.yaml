@@ -32,15 +32,21 @@ steps:
     build:
       - |
         make -C /src M=$(pwd)/drivers/openmiop modules
+        # Blade 3 board support shipped with openmiop: RTL8125 port LEDs.
+        cp -r /pkg/blade3-leds ./blade3-leds
+        make -C /src M=$(pwd)/blade3-leds modules
     install:
       - |
         krel=$(cat /src/include/config/kernel.release)
         mkdir -p /rootfs/usr/lib/modules/${krel}/extras
         install -m 0644 drivers/openmiop/openmiop-ep.ko /rootfs/usr/lib/modules/${krel}/extras/
         llvm-strip --strip-debug /rootfs/usr/lib/modules/${krel}/extras/openmiop-ep.ko
+        install -m 0644 blade3-leds/blade3-leds.ko /rootfs/usr/lib/modules/${krel}/extras/
+        llvm-strip --strip-debug /rootfs/usr/lib/modules/${krel}/extras/blade3-leds.ko
         sed -e "s/@VERSION@/{{ .openmiop_version }}/" /pkg/manifest.yaml > /rootfs/manifest.yaml
     test:
       - |
+        find /rootfs/usr/lib/modules -name blade3-leds.ko | grep -q .
         ko=$(find /rootfs/usr/lib/modules -name openmiop-ep.ko)
         grep -aq "vermagic=6.18.54-talos SMP mod_unload modversions aarch64" "$ko"
         grep -aq "license=GPL" "$ko"
