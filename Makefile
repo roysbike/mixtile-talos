@@ -21,6 +21,10 @@ BUILD_ARGS += --build-arg=TOOLS_PREFIX=$(TOOLS_PREFIX)
 BUILD_ARGS += --build-arg=TOOLS=$(TOOLS)
 # Optional, e.g. registry cache flags from build.sh (BUILD_CACHE).
 BUILD_ARGS += $(CACHE_ARGS)
+# Prebuilt talos-kernel-build image for the openmiop stage; empty builds
+# the kernel tree as a stage (see build.sh, KERNEL_IMAGE).
+KERNEL_BUILD_IMAGE ?=
+BUILD_ARGS += --build-arg=KERNEL_BUILD_IMAGE=$(KERNEL_BUILD_IMAGE)
 
 .DEFAULT_GOAL := sbc-mixtile-blade3
 

@@ -68,6 +68,8 @@ jobs:
           echo "INSTALLER_IMAGE=ghcr.io/${owner}/mixtile-talos-installer:${tag}" >> "${GITHUB_ENV}"
           # Layer cache: the kernel tree stage takes most of a cold build.
           echo "BUILD_CACHE=ghcr.io/${owner}/mixtile-talos-buildcache" >> "${GITHUB_ENV}"
+          # The kernel tree as a prebuilt image, rebuilt only when its inputs change.
+          echo "KERNEL_IMAGE=1" >> "${GITHUB_ENV}"
 
       - name: Build overlay and Talos images
         run: ./build.sh all

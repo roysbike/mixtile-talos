@@ -6,7 +6,15 @@ variant: scratch
 shell: /bin/bash
 dependencies:
   - stage: base
+  # The kernel tree: a prebuilt talos-kernel-build image when build.sh
+  # passes one (KERNEL_BUILD_IMAGE), otherwise the stage itself.
+{{- if .BUILD_ARG_KERNEL_BUILD_IMAGE }}
+  - image: "{{ .BUILD_ARG_KERNEL_BUILD_IMAGE }}"
+    from: /src
+    to: /src
+{{- else }}
   - stage: talos-kernel-build
+{{- end }}
   - image: "{{ .BUILD_ARG_TOOLS_PREFIX }}/llvm:{{ .BUILD_ARG_TOOLS }}"
 steps:
   - sources:
