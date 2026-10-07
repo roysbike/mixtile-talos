@@ -17,6 +17,16 @@ OVERLAY_NAME=${OVERLAY_NAME:-sbc-mixtile-blade3}
 OPENMIOP_NAME=${OPENMIOP_NAME:-openmiop}
 # If set, the installer image is pushed there (for talosctl upgrade).
 INSTALLER_IMAGE=${INSTALLER_IMAGE:-}
+# If set (an image name without tag), buildx imports and exports its layer
+# cache there, one tag per target. The talos-kernel-build stage then only
+# rebuilds when the kernel inputs change.
+BUILD_CACHE=${BUILD_CACHE:-}
+# KERNEL_IMAGE=1: build the talos-kernel-build stage once as an image
+# (${REGISTRY}/${USERNAME}/talos-kernel-build:<linux version>-<input hash>)
+# and build openmiop on top of it. The registry layer cache does not
+# restore that stage across runs (bldr merges dependencies with MergeOp),
+# so without this every build compiles vmlinux again (~45 min).
+KERNEL_IMAGE=${KERNEL_IMAGE:-0}
 
 DRBD_EXTENSION=${DRBD_EXTENSION:-ghcr.io/siderolabs/drbd:9.3.4-${TALOS_VERSION}}
 ZFS_EXTENSION=${ZFS_EXTENSION:-ghcr.io/siderolabs/zfs:2.4.4-${TALOS_VERSION}}
@@ -67,12 +77,49 @@ require_tools() {
     docker buildx version >/dev/null
 }
 
+# buildx cache flags for target $1, empty without BUILD_CACHE.
+cache_args() {
+    [[ -n "${BUILD_CACHE}" ]] || return 0
+    local ref="${BUILD_CACHE}:$1"
+    echo "--cache-from=type=registry,ref=${ref} --cache-to=type=registry,ref=${ref},mode=max,image-manifest=true,oci-mediatypes=true"
+}
+
 build_overlay() {
     make target-sbc-mixtile-blade3 \
         PLATFORM=linux/arm64 \
         PKGS="${PKGS}" \
         TOOLS="${TOOLS}" \
+        CACHE_ARGS="$(cache_args sbc-mixtile-blade3)" \
         TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/${OVERLAY_NAME}:${IMAGE_TAG} --push"
+}
+
+# Everything that goes into the talos-kernel-build stage.
+kernel_key() {
+    {
+        grep -E '^  linux_' "${ROOT}/Pkgfile"
+        echo "PKGS=${PKGS} TOOLS=${TOOLS}"
+        find "${ROOT}/artifacts/talos-kernel" "${ROOT}/internal" -type f -print0 |
+            sort -z | xargs -0 sha256sum | sed "s|${ROOT}/||"
+    } | sha256sum | cut -c1-16
+}
+
+# Sets KERNEL_BUILD_IMAGE, building and pushing the image if it is missing.
+kernel_tree_image() {
+    [[ "${KERNEL_IMAGE}" == 1 ]] || return 0
+    local linux image
+    linux=$(awk '/^  linux_version:/{print $2}' "${ROOT}/Pkgfile")
+    image="${REGISTRY}/${USERNAME}/talos-kernel-build:${linux}-$(kernel_key)"
+    if docker buildx imagetools inspect "${image}" >/dev/null 2>&1; then
+        echo "kernel tree: using ${image}"
+    else
+        echo "kernel tree: building ${image}"
+        make target-talos-kernel-build \
+            PLATFORM=linux/arm64 \
+            PKGS="${PKGS}" \
+            TOOLS="${TOOLS}" \
+            TARGET_ARGS="--tag=${image} --push"
+    fi
+    export KERNEL_BUILD_IMAGE=${image}
 }
 
 build_extension() {
@@ -80,6 +127,7 @@ build_extension() {
         PLATFORM=linux/arm64 \
         PKGS="${PKGS}" \
         TOOLS="${TOOLS}" \
+        CACHE_ARGS="$(cache_args openmiop)" \
         TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/${OPENMIOP_NAME}:${OPENMIOP_VERSION} --push"
 }
 
@@ -248,12 +296,12 @@ main() {
 
     case "${action}" in
         overlay) build_overlay ;;
-        extension) build_extension ;;
+        extension) kernel_tree_image; build_extension ;;
         image) build_images ;;
-        artifacts) export_artifacts ;;
+        artifacts) kernel_tree_image; export_artifacts ;;
         all)
             build_overlay
-            [[ "${OPENMIOP}" == 1 ]] && build_extension
+            [[ "${OPENMIOP}" == 1 ]] && { kernel_tree_image; build_extension; }
             build_images
             export_artifacts
             ;;

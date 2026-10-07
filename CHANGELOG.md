@@ -3,6 +3,41 @@
 All notable changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0-rc.1] - 2026-10-08
+
+openmiop v0.2: interrupts and multiqueue. Part of OpenMIOP Stack
+v0.2.0-rc.1. Kernel, DTB, U-Boot and the other extensions are unchanged.
+
+### Changed
+
+- openmiop 0.2.0-rc.1-v1.14.2 from roysbike/pcie-ep-net `665d208` (tag
+  v0.2.0-rc.1): TX completion interrupts, RX doorbell through the GIC
+  ITS, 4 queue pairs over both eDMA channels (RSS), negotiated per
+  connection; works with 0.1 blades and the BMC helper. See the
+  pcie-ep-net changelog.
+- Build: the Talos kernel tree is built once as an image
+  (`ghcr.io/<owner>/talos-kernel-build:<linux>-<input hash>`) and reused
+  by the openmiop stage; a build without kernel changes takes ~10 min
+  instead of ~60. buildx also imports/exports a registry layer cache.
+- CI actions moved to their Node 24 majors.
+
+### Tested
+
+- Four Blade 3 (three control planes, one worker) on development builds
+  with the same kernel, DTB and openmiop driver source as this release,
+  installed with staged upgrades one node at a time: every pair up with
+  4 queues and doorbells; 7.9-8.4 Gbit/s per pair with 4 TCP flows,
+  22.2 Gbit/s for four blades sending at once; BMC reboot and hard
+  resets of all four blades recovered. This release build is inspected
+  in CI (`scripts/verify-installer.sh`).
+
+### Documentation
+
+- Upgrades: `talosctl upgrade --stage --drain=false` avoids two problems
+  seen on the lab cluster: the client-side drain never finishes on nodes
+  with CNPG primaries (their PDBs allow no eviction), and a reboot can
+  hang in pod unmounts when storage is stuck.
+
 ## [0.1.0-rc.2] - 2026-10-06
 
 Driver fix release. Part of OpenMIOP Stack v0.1.0-rc.2 (protocol v4,
@@ -142,5 +177,6 @@ DTB, extensions and openmiop driver source as this release.
 - Not hardware-tested: installing from the raw disk image of this build, NPU/GPU workloads (`rocket` and `panthor` load), VFIO, more
   than four blades.
 
+[0.2.0-rc.1]: https://github.com/roysbike/mixtile-talos/releases/tag/v0.2.0-rc.1
 [0.1.0-rc.2]: https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.2
 [0.1.0-rc.1]: https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.1
