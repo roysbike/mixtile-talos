@@ -17,6 +17,10 @@ OVERLAY_NAME=${OVERLAY_NAME:-sbc-mixtile-blade3}
 OPENMIOP_NAME=${OPENMIOP_NAME:-openmiop}
 # If set, the installer image is pushed there (for talosctl upgrade).
 INSTALLER_IMAGE=${INSTALLER_IMAGE:-}
+# If set (an image name without tag), buildx imports and exports its layer
+# cache there, one tag per target. The talos-kernel-build stage then only
+# rebuilds when the kernel inputs change.
+BUILD_CACHE=${BUILD_CACHE:-}
 
 DRBD_EXTENSION=${DRBD_EXTENSION:-ghcr.io/siderolabs/drbd:9.3.4-${TALOS_VERSION}}
 ZFS_EXTENSION=${ZFS_EXTENSION:-ghcr.io/siderolabs/zfs:2.4.4-${TALOS_VERSION}}
@@ -67,11 +71,19 @@ require_tools() {
     docker buildx version >/dev/null
 }
 
+# buildx cache flags for target $1, empty without BUILD_CACHE.
+cache_args() {
+    [[ -n "${BUILD_CACHE}" ]] || return 0
+    local ref="${BUILD_CACHE}:$1"
+    echo "--cache-from=type=registry,ref=${ref} --cache-to=type=registry,ref=${ref},mode=max,image-manifest=true,oci-mediatypes=true"
+}
+
 build_overlay() {
     make target-sbc-mixtile-blade3 \
         PLATFORM=linux/arm64 \
         PKGS="${PKGS}" \
         TOOLS="${TOOLS}" \
+        CACHE_ARGS="$(cache_args sbc-mixtile-blade3)" \
         TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/${OVERLAY_NAME}:${IMAGE_TAG} --push"
 }
 
@@ -80,6 +92,7 @@ build_extension() {
         PLATFORM=linux/arm64 \
         PKGS="${PKGS}" \
         TOOLS="${TOOLS}" \
+        CACHE_ARGS="$(cache_args openmiop)" \
         TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/${OPENMIOP_NAME}:${OPENMIOP_VERSION} --push"
 }
 

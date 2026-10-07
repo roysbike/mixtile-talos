@@ -19,6 +19,8 @@ BUILD_ARGS += --build-arg=PKGS_PREFIX=$(PKGS_PREFIX)
 BUILD_ARGS += --build-arg=PKGS=$(PKGS)
 BUILD_ARGS += --build-arg=TOOLS_PREFIX=$(TOOLS_PREFIX)
 BUILD_ARGS += --build-arg=TOOLS=$(TOOLS)
+# Optional, e.g. registry cache flags from build.sh (BUILD_CACHE).
+BUILD_ARGS += $(CACHE_ARGS)
 
 .DEFAULT_GOAL := sbc-mixtile-blade3
 
