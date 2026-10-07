@@ -32,22 +32,12 @@ steps:
     build:
       - |
         make -C /src M=$(pwd)/drivers/openmiop modules
-        # Development refs may carry experiment modules (never loaded
-        # unless a machine config names them).
-        if [ -d experiments ]; then
-          for d in experiments/*/; do make -C /src M=$(pwd)/$d modules; done
-        fi
     install:
       - |
         krel=$(cat /src/include/config/kernel.release)
         mkdir -p /rootfs/usr/lib/modules/${krel}/extras
         install -m 0644 drivers/openmiop/openmiop-ep.ko /rootfs/usr/lib/modules/${krel}/extras/
         llvm-strip --strip-debug /rootfs/usr/lib/modules/${krel}/extras/openmiop-ep.ko
-        for ko in experiments/*/*.ko; do
-          [ -f "$ko" ] || continue
-          install -m 0644 "$ko" /rootfs/usr/lib/modules/${krel}/extras/
-          llvm-strip --strip-debug /rootfs/usr/lib/modules/${krel}/extras/$(basename "$ko")
-        done
         sed -e "s/@VERSION@/{{ .openmiop_version }}/" /pkg/manifest.yaml > /rootfs/manifest.yaml
     test:
       - |
