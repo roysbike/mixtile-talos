@@ -71,7 +71,9 @@ assert f[4:8] == b"zimg" and f[0x18:0x1c] == b"zstd", "not a zstd EFI zboot imag
 off, size = struct.unpack_from("<II", f, 8)
 open(sys.argv[2], "wb").write(f[off:off + size])
 EOF
-if zstd -dqc "${WORK}/kernel.zst" | grep -aq link_down_wait_ms; then have=own; else have=official; fi
+# Into a file: grep -q exiting early would fail zstd (SIGPIPE) under pipefail.
+zstd -dqc "${WORK}/kernel.zst" > "${WORK}/kernel"
+if grep -aq link_down_wait_ms "${WORK}/kernel"; then have=own; else have=official; fi
 [[ -z "${expect}" || "${expect}" == "${have}" ]] || fail "kernel image is ${have}, BUILD-INFO says ${expect}"
 ok "kernel image ${have}"
 
