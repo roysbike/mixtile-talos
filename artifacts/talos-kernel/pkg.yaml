@@ -1,8 +1,12 @@
 # The kernel tree of Talos v1.14.2 (6.18.54-talos), prepared for building
 # out-of-tree modules. Mirrors siderolabs/pkgs kernel/prepare + kernel/build
 # at commit 6c312e4 (PKGS v1.14.0-37-g6c312e4): same sources, patches,
-# config and LLVM toolchain image. Only vmlinux and modules_prepare are
-# built; that is enough for Module.symvers (symbol CRCs) and module BTF.
+# config and LLVM toolchain image, plus patches 01xx (PCIe Root Port
+# recovery after a link down, see the patch headers). vmlinux and
+# modules_prepare are enough for Module.symvers (symbol CRCs) and module
+# BTF; vmlinuz.efi is the kernel image build.sh ships in place of the
+# official one. The official modules and initramfs stay as they are: the
+# patches change built-in code only.
 #
 # The resulting modules are not signed with the Talos key, which is a
 # throw-away key generated during the official build. Images that use
@@ -39,6 +43,10 @@ steps:
       - |
         cd /src
         make -j $(nproc) vmlinux
+        # The kernel image itself, as the official build installs it
+        # (/boot/vmlinuz): build.sh puts it into the imager in place of
+        # the official one. Built-in code differs only by patches 01xx.
+        make -j $(nproc) vmlinuz.efi
         make -j $(nproc) modules_prepare
         # External modules here only import symbols exported by vmlinux.
         cp vmlinux.symvers Module.symvers
@@ -46,6 +54,7 @@ steps:
       - |
         cd /src
         test "$(cat include/config/kernel.release)" = "6.18.54-talos"
+        test -s arch/arm64/boot/vmlinuz.efi
         # The config must be the one Talos ships, unchanged by olddefconfig
         # (apart from the compiler version text).
         diff <(grep -v CONFIG_CC_VERSION_TEXT .config) <(grep -v CONFIG_CC_VERSION_TEXT /pkg/config-arm64)

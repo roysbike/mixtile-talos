@@ -27,6 +27,14 @@ BUILD_CACHE=${BUILD_CACHE:-}
 # restore that stage across runs (bldr merges dependencies with MergeOp),
 # so without this every build compiles vmlinux again (~45 min).
 KERNEL_IMAGE=${KERNEL_IMAGE:-0}
+# OWN_KERNEL=1: boot the kernel built from artifacts/talos-kernel (the
+# Talos sources and config plus patches 01xx) instead of the official
+# one. The imager is the official image with only usr/install/arm64/vmlinuz
+# replaced (${REGISTRY}/${USERNAME}/${IMAGER_NAME}); modules, initramfs and
+# extensions stay official. Needs KERNEL_IMAGE=1.
+OWN_KERNEL=${OWN_KERNEL:-1}
+IMAGER_NAME=${IMAGER_NAME:-imager-blade3}
+IMAGER_IMAGE=ghcr.io/siderolabs/imager:${TALOS_VERSION}
 
 DRBD_EXTENSION=${DRBD_EXTENSION:-ghcr.io/siderolabs/drbd:9.3.4-${TALOS_VERSION}}
 ZFS_EXTENSION=${ZFS_EXTENSION:-ghcr.io/siderolabs/zfs:2.4.4-${TALOS_VERSION}}
@@ -52,6 +60,7 @@ Environment:
   IMAGE_TAG=${IMAGE_TAG}
   OUTPUT_DIR=${OUTPUT_DIR}
   OPENMIOP=${OPENMIOP} (OPENMIOP_VERSION=${OPENMIOP_VERSION})
+  OWN_KERNEL=${OWN_KERNEL} (needs KERNEL_IMAGE=1, now ${KERNEL_IMAGE})
 
 The overlay and the openmiop extension are pushed because the Talos
 imager resolves them as OCI images.
@@ -122,6 +131,28 @@ kernel_tree_image() {
     export KERNEL_BUILD_IMAGE=${image}
 }
 
+# Sets IMAGER_IMAGE to the official imager with our kernel image in it.
+build_imager() {
+    [[ "${OWN_KERNEL}" == 1 ]] || return 0
+    if [[ "${KERNEL_IMAGE}" != 1 ]]; then
+        echo "OWN_KERNEL=1 needs KERNEL_IMAGE=1 (or OWN_KERNEL=0 for the official kernel)" >&2
+        exit 2
+    fi
+    kernel_tree_image
+    local image="${REGISTRY}/${USERNAME}/${IMAGER_NAME}:${TALOS_VERSION}-$(kernel_key)"
+    if docker buildx imagetools inspect "${image}" >/dev/null 2>&1; then
+        echo "imager: using ${image}"
+    else
+        echo "imager: building ${image}"
+        docker buildx build --platform=linux/arm64 --tag="${image}" --push - <<DOCKERFILE
+FROM ${KERNEL_BUILD_IMAGE} AS kernel
+FROM ghcr.io/siderolabs/imager:${TALOS_VERSION}
+COPY --from=kernel /src/arch/arm64/boot/vmlinuz.efi /usr/install/arm64/vmlinuz
+DOCKERFILE
+    fi
+    IMAGER_IMAGE=${image}
+}
+
 build_extension() {
     make target-openmiop \
         PLATFORM=linux/arm64 \
@@ -188,7 +219,7 @@ build_images() {
 
     for kind in installer blade3; do
         docker run "${docker_args[@]}" \
-            "ghcr.io/siderolabs/imager:${TALOS_VERSION}" \
+            "${IMAGER_IMAGE}" \
             "${kind}" "${common_args[@]}"
     done
 
@@ -261,6 +292,12 @@ export_artifacts() {
         echo "pkgs: ${PKGS}"
         echo "tools: ${TOOLS}"
         echo "kernel: $(awk '/^  linux_version:/{print $2}' "${ROOT}/Pkgfile")-talos"
+        if [[ "${OWN_KERNEL}" == 1 ]]; then
+            echo "kernel-image: own, patches $(cd "${ROOT}/artifacts/talos-kernel/patches" && ls 01*.patch | cut -c1-4 | paste -sd,)"
+            echo "imager: ${IMAGER_IMAGE}@$(digest "${IMAGER_IMAGE}")"
+        else
+            echo "kernel-image: official"
+        fi
         echo "openmiop-version: ${OPENMIOP_VERSION}"
         echo "openmiop-ref: $(awk '/^  openmiop_ref:/{print $2}' "${ROOT}/Pkgfile")"
         echo "overlay: ${overlay}@$(digest "${overlay}")"
@@ -297,11 +334,12 @@ main() {
     case "${action}" in
         overlay) build_overlay ;;
         extension) kernel_tree_image; build_extension ;;
-        image) build_images ;;
-        artifacts) kernel_tree_image; export_artifacts ;;
+        image) build_imager; build_images ;;
+        artifacts) kernel_tree_image; build_imager; export_artifacts ;;
         all)
             build_overlay
             [[ "${OPENMIOP}" == 1 ]] && { kernel_tree_image; build_extension; }
+            build_imager
             build_images
             export_artifacts
             ;;

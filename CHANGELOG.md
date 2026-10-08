@@ -13,6 +13,28 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   a 2.5G port stayed dark after boot). Loaded with r8169 by PCI ID;
   `mode=` sets the LED selector.
 
+### Fixed
+
+- **The NVMe of every blade died when the Cluster Box rebooted**
+  (`controller is down; CSTS=0xffffffff`, ZFS I/O errors, a hung reboot;
+  only a hard reset of the blade brought it back). The M.2 PERST# of a
+  blade is its one U.2 PERST# (`PCIE30X4_PERSTn`, GPIO4_B6), an
+  open-drain line shared with the endpoint and driven by the Cluster Box
+  (Blade 3 schematic v1.2.0, Cluster Box datasheet M.2 pin 50). A Cluster
+  Box reboot holds it for ~10 s, the NVMe resets, and the 6.18 Rockchip
+  host driver has no link-down recovery. Now:
+  - the image boots its own kernel: the Talos 6.18.54 sources and config
+    plus Root Port reset on link down (Linux 7.3: `3fc686d550f6`,
+    `4c99bace4f4e`, `b376b3ff9cb0`) and patch 0103 (recover only a link
+    that is down, as Armbian build#10937; wait up to
+    `pcie_dw_rockchip.link_down_wait_ms`, 20 s, for a device held in
+    PERST#). The NVMe goes through AER recovery instead of being lost.
+    Modules, initramfs and extensions stay official: the imager is the
+    official one with only `usr/install/arm64/vmlinuz` replaced
+    (`OWN_KERNEL=1`, needs `KERNEL_IMAGE=1`);
+  - the DTB no longer drives that PERST# from pcie3x2 (no `reset-gpios`),
+    as the vendor U-Boot does in a Cluster Box.
+
 ## [0.2.0-rc.1] - 2026-10-08
 
 openmiop v0.2: interrupts and multiqueue. Part of OpenMIOP Stack

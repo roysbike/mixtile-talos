@@ -435,8 +435,17 @@
 	status = "okay";
 };
 
+/*
+ * No reset-gpios: in a Cluster Box the M.2 PERST# is the blade's one U.2
+ * PERST# (PCIE30X4_PERSTn_M1, GPIO4_B6), an open-drain line shared with
+ * the endpoint above and driven by the Cluster Box (Blade 3 schematic
+ * v1.2.0, Cluster Box datasheet M.2 pin 50). Driving it high from here
+ * fights the Cluster Box; the vendor U-Boot gives pcie3x2 no reset GPIO
+ * either. pinctrl stays: it muxes GPIO4_B6 as a GPIO without the default
+ * pull-down. When the Cluster Box reboots it holds PERST# and the NVMe
+ * resets; the Root Port recovers it (kernel patches 01xx).
+ */
 &pcie3x2 {
-	reset-gpios = <&gpio4 RK_PB6 GPIO_ACTIVE_HIGH>;
 	vpcie3v3-supply = <&vcc3v3_pcie30>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie3_rst>;
