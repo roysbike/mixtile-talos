@@ -119,6 +119,11 @@ grep -rqs "extras/openmiop-ep.ko" "${WORK}"/initrd/*.d/usr/lib/modules/*/modules
 grep -rqs "openmiop,rk3588-pcie-ep" "${WORK}"/initrd/*.d/usr/lib/modules/*/modules.alias ||
     fail "openmiop DT alias not in the generated modules.alias"
 ok "openmiop in modules.dep and modules.alias"
+grep -rqs "extras/blade3-leds.ko" "${WORK}"/initrd/*.d/usr/lib/modules/*/modules.dep ||
+    fail "blade3-leds.ko not in the generated modules.dep"
+grep -rqs "pci:v000010ECd00008125.* blade3_leds" "${WORK}"/initrd/*.d/usr/lib/modules/*/modules.alias ||
+    fail "blade3-leds has no RTL8125 alias"
+ok "blade3-leds in modules.dep and modules.alias"
 
 dtb=$(find "${WORK}/fs" -name rk3588-mixtile-blade3.dtb -print -quit)
 [[ -n "${dtb}" ]] || fail "rk3588-mixtile-blade3.dtb not in the installer"
