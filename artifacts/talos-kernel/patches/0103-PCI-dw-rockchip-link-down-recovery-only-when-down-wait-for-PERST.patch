@@ -1,0 +1,102 @@
+From: roysbike <roysbike@gmail.com>
+Subject: [PATCH] PCI: dw-rockchip: recover only a link that is down, wait
+ for a device held in PERST#
+
+Three changes on top of "PCI: dw-rockchip: Implement .reset_root_port()
+and use for link down" (b376b3ff9cb0, Linux 7.3):
+
+- Recover only while the link is really down. reset_root_port() asserts
+  the controller reset, which raises LINK_REQ_RST_NOT again once the link
+  has retrained; acting on that resets the Root Port in a loop (Armbian
+  build#10937, RK3568).
+
+- Find the Root Port with pci_get_slot() instead of walking the root bus
+  list without pci_bus_sem; the recovery takes that semaphore itself.
+
+- After the reset, wait up to link_down_wait_ms (default 20 s) for the
+  link. On a Mixtile Blade 3 in a Cluster Box the M.2 NVMe (pcie3x2)
+  shares one open-drain PERST# with the endpoint on pcie3x4; a Cluster
+  Box reboot holds it for ~10 s. dw_pcie_wait_for_link() gives up after
+  ~1 s and the drivers' slot_reset callbacks would then find no device.
+
+Not upstream.
+---
+diff --git a/drivers/pci/controller/dwc/pcie-dw-rockchip.c b/drivers/pci/controller/dwc/pcie-dw-rockchip.c
+--- a/drivers/pci/controller/dwc/pcie-dw-rockchip.c
++++ b/drivers/pci/controller/dwc/pcie-dw-rockchip.c
+@@ -10,6 +10,7 @@
+ 
+ #include <linux/bitfield.h>
+ #include <linux/clk.h>
++#include <linux/delay.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/hw_bitfield.h>
+ #include <linux/irqchip/chained_irq.h>
+@@ -110,6 +111,11 @@
+ static int rockchip_pcie_rc_reset_root_port(struct pci_host_bridge *bridge,
+ 				       struct pci_dev *pdev);
+ 
++static unsigned int link_down_wait_ms = 20000;
++module_param(link_down_wait_ms, uint, 0644);
++MODULE_PARM_DESC(link_down_wait_ms,
++		 "How long a Root Port reset waits for the link to come back (ms)");
++
+ static int rockchip_pcie_readl_apb(struct rockchip_pcie *rockchip, u32 reg)
+ {
+ 	return readl_relaxed(rockchip->apb_base + reg);
+@@ -537,10 +543,24 @@
+ 
+ 	if (reg & PCIE_LINK_REQ_RST_NOT_INT) {
+ 		dev_dbg(dev, "hot reset or link-down reset\n");
+-		for_each_pci_bridge(port, pp->bridge->bus) {
+-			if (pci_pcie_type(port) == PCI_EXP_TYPE_ROOT_PORT)
+-				pci_host_handle_link_down(port);
+-		}
++		/*
++		 * reset_root_port() asserts the controller reset, which raises
++		 * LINK_REQ_RST_NOT again once the link has retrained. Acting on
++		 * that event would reset the Root Port in a loop, so recover
++		 * only while the link is really down (as the EP thread does).
++		 */
++		if (rockchip_pcie_link_up(pci))
++			return IRQ_HANDLED;
++
++		/*
++		 * The Root Port is device 00.0 of the root bus. pci_get_slot()
++		 * takes pci_bus_sem while it looks; the recovery below takes
++		 * it again, so the walk must not hold it.
++		 */
++		port = pci_get_slot(pp->bridge->bus, PCI_DEVFN(0, 0));
++		if (port && pci_pcie_type(port) == PCI_EXP_TYPE_ROOT_PORT)
++			pci_host_handle_link_down(port);
++		pci_dev_put(port);
+ 	}
+ 
+ 	return IRQ_HANDLED;
+@@ -835,8 +855,24 @@
+ 	if (ret)
+ 		goto deinit_clk;
+ 
+-	/* Ignore errors, the link may come up later */
+-	dw_pcie_wait_for_link(pci);
++	/*
++	 * A link that went down because the device is held in reset (PERST#
++	 * from the other end of a shared line, e.g. a Mixtile Cluster Box
++	 * rebooting) only trains once that reset ends. The drivers' slot_reset
++	 * callbacks run right after this, so give the link link_down_wait_ms
++	 * to come back. Ignore errors, the link may come up later.
++	 */
++	if (dw_pcie_wait_for_link(pci)) {
++		unsigned long end = jiffies + msecs_to_jiffies(link_down_wait_ms);
++
++		while (!rockchip_pcie_link_up(pci) && time_before(jiffies, end))
++			msleep(100);
++		if (rockchip_pcie_link_up(pci))
++			dev_info(dev, "link back after Root Port reset\n");
++		else
++			dev_warn(dev, "no link %u ms after Root Port reset\n",
++				 link_down_wait_ms);
++	}
+ 	dev_dbg(dev, "Root Port reset completed\n");
+ 	return ret;
+ 

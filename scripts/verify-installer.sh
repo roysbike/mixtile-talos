@@ -50,15 +50,32 @@ for _ in range(nsec):
     name = f[off:off + 8].rstrip(b"\0").decode(errors="replace")
     vsize, _, _, rawptr = struct.unpack_from("<IIII", f, off + 8)
     data = f[rawptr:rawptr + vsize]
-    if name in (".uname", ".cmdline", ".initrd") and name not in seen:
+    if name in (".uname", ".cmdline", ".initrd", ".linux") and name not in seen:
         seen.add(name)
-        open(f"{work}/sec-{name[1:]}", "wb").write(data.rstrip(b"\0") if name != ".initrd" else data)
+        open(f"{work}/sec-{name[1:]}", "wb").write(data.rstrip(b"\0") if name in (".uname", ".cmdline") else data)
     off += 40
 EOF
 
 uname=$(cat "${WORK}/sec-uname")
 [[ "${uname}" == "${KERNEL}" ]] || fail "UKI kernel ${uname}, expected ${KERNEL}"
 ok "kernel ${uname}"
+
+# Own or official kernel image (BUILD-INFO "kernel-image:"): the own one
+# has patch 0103's module parameter. .linux is an EFI zboot image; the
+# zstd payload offset and size are at 0x08 and 0x0c.
+expect=$(sed -n 's/^kernel-image: \([a-z]*\).*/\1/p' "${OUT}/BUILD-INFO.txt" 2>/dev/null)
+python3 - "${WORK}/sec-linux" "${WORK}/kernel.zst" <<'EOF'
+import struct, sys
+f = open(sys.argv[1], "rb").read()
+assert f[4:8] == b"zimg" and f[0x18:0x1c] == b"zstd", "not a zstd EFI zboot image"
+off, size = struct.unpack_from("<II", f, 8)
+open(sys.argv[2], "wb").write(f[off:off + size])
+EOF
+# Into a file: grep -q exiting early would fail zstd (SIGPIPE) under pipefail.
+zstd -dqc "${WORK}/kernel.zst" > "${WORK}/kernel"
+if grep -aq link_down_wait_ms "${WORK}/kernel"; then have=own; else have=official; fi
+[[ -z "${expect}" || "${expect}" == "${have}" ]] || fail "kernel image is ${have}, BUILD-INFO says ${expect}"
+ok "kernel image ${have}"
 
 cmdline=$(cat "${WORK}/sec-cmdline")
 [[ "${cmdline}" != *module.sig_enforce=1* ]] || fail "cmdline still has module.sig_enforce=1: ${cmdline}"
@@ -145,6 +162,8 @@ checks = {
         lambda: 'status = "disabled"' in node("pcie@fe150000"),
     "pcie@fe160000 (NVMe host) okay":
         lambda: 'status = "okay"' in node("pcie@fe160000"),
+    "pcie@fe160000 does not drive the shared PERST# (no reset-gpios)":
+        lambda: node("pcie@fe160000") and "reset-gpios" not in node("pcie@fe160000"),
     "PCIe SMMU iommu@fc900000 disabled":
         lambda: 'status = "disabled"' in node("iommu@fc900000"),
     "PCIe3 PHY bifurcated (data-lanes 1 1 2 2)":
