@@ -12,6 +12,21 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   of being dropped until it is reset. Running on all four blades since
   2026-10-11.
 
+### Added
+
+- `blade3-nvme-recover` module in the openmiop extension (loaded with
+  nvme): brings the M.2 NVMe back after the Cluster Box pulsed PERST#
+  (shared with the blade's endpoint link), with the official kernel.
+  On a link down it restarts the LTSSM; once the link is stable it
+  restores the Root Port and NVMe config space saved at load time, asks
+  for 8 GT/s again and resets the NVMe with `pci_reset_function()`, so
+  nvme re-initialises the controller and retries the waiting I/O.
+  Tested on .108 with hot resets (secondary bus reset pulse) under
+  `dd` load: NVMe back in ~1.6 s, no I/O error, zpool ONLINE, link at
+  8 GT/s. Must finish within the nvme I/O timeout (30 s).
+- DTB: no `reset-gpios` on pcie3x2 (the shared PERST#), as in the vendor
+  U-Boot.
+
 ### Removed
 
 - The own kernel and DTB change from PR #10 (NVMe PERST# recovery). The
