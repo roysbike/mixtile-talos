@@ -5,6 +5,22 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- openmiop 0.3.0-dev.2 (pcie-ep-net 42010d4): push mode, and a peer that
+  stalls right after it connects is connected again after 2 s instead
+  of being dropped until it is reset. Running on all four blades since
+  2026-10-11.
+
+### Removed
+
+- The own kernel and DTB change from PR #10 (NVMe PERST# recovery). The
+  installer replaced only vmlinuz and kept the official modules; the
+  kernel rejects them (`failed to validate module [sdhci] BTF: -22`),
+  so there is no eMMC, NVMe or end0 and Talos boots into maintenance
+  mode. Back on the official kernel until the modules are built with
+  it.
+
 ### Added
 
 - `blade3-leds` module in the openmiop extension: the Blade 3 RTL8125
