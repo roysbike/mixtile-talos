@@ -20,6 +20,9 @@
  * reset_done: the controller is brought up again with its queues and
  * namespaces, and the I/O that waited is retried. That has to happen
  * before the nvme I/O timeout (30 s) gives the controller up.
+ * pci_reset_function() saves the config space it finds, and after PERST#
+ * the BARs are gone; so the config space saved at load time goes back
+ * first.
  *
  * It does not bind to the device; nvme stays its driver.
  */
@@ -27,6 +30,7 @@
 #include <linux/kthread.h>
 #include <linux/module.h>
 #include <linux/pci.h>
+#include <linux/slab.h>
 
 #include "pcie-designware.h"
 
@@ -52,6 +56,7 @@ MODULE_PARM_DESC(recoveries, "NVMe resets done after a link down (read only)");
 struct port {
 	struct pci_dev *nvme;
 	struct dw_pcie *pci;
+	struct pci_saved_state *saved;	/* config space from load time */
 	bool up;
 	unsigned long down_since;
 	unsigned long up_since;		/* link back since, 0: not yet */
@@ -109,6 +114,8 @@ static void port_poll(struct port *p)
 		return;
 	dev_info(&p->nvme->dev, "link up after %u ms, resetting the NVMe\n",
 		 jiffies_to_msecs(jiffies - p->down_since));
+	pci_load_saved_state(p->nvme, p->saved);
+	pci_restore_state(p->nvme);
 	ret = pci_reset_function(p->nvme);
 	recoveries++;
 	if (ret)
@@ -148,8 +155,11 @@ static struct dw_pcie *nvme_host(struct pci_dev *nvme)
 
 static void put_ports(void)
 {
-	while (nports)
-		pci_dev_put(ports[--nports].nvme);
+	while (nports) {
+		nports--;
+		kfree(ports[nports].saved);
+		pci_dev_put(ports[nports].nvme);
+	}
 }
 
 static int __init recover_init(void)
@@ -161,6 +171,10 @@ static int __init recover_init(void)
 		struct dw_pcie *pci = nvme_host(nvme);
 
 		if (!pci)
+			continue;
+		pci_save_state(nvme);
+		ports[nports].saved = pci_store_saved_state(nvme);
+		if (!ports[nports].saved)
 			continue;
 		ports[nports].nvme = pci_dev_get(nvme);
 		ports[nports].pci = pci;
