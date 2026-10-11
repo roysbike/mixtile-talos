@@ -9,14 +9,14 @@ Mixtile Cluster Box.
 Image build and eMMC flashing stay here. Cozystack bootstrap, storage classes,
 and UI access scripts belong in the separate `cozystack-box-mixtile` project.
 
-## OpenMIOP Stack v0.2.0-rc.1
+## OpenMIOP Stack v0.3.0-rc.1
 
-This repository's release **v0.2.0-rc.1** is the Blade OS of the OpenMIOP
+This repository's release **v0.3.0-rc.1** is the Blade OS of the OpenMIOP
 stack: Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
 Mixtile Cluster Box over its PCIe switch, built into the installer image.
 
 ```
-        Cluster Box BMC (MT7620A, OpenWrt)  — openmiop-rc helper, omi0 10.20.0.1
+        Cluster Box BMC (MT7620A, OpenWrt)  — omi-rc module or openmiop-rc, omi0 10.20.0.1
                        |
                     ASM2824 PCIe switch
                        |
@@ -26,14 +26,14 @@ Mixtile Cluster Box over its PCIe switch, built into the installer image.
                                               Talos + openmiop, omi0 10.20.0.x
 ```
 
-| OpenMIOP Stack v0.2.0-rc.1 | |
+| OpenMIOP Stack v0.3.0-rc.1 | |
 | --- | --- |
-| Protocol | OpenMIOP v4 framing + per-connection features (RX doorbell, multiqueue) |
-| Blade driver | [pcie-ep-net v0.2.0-rc.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.2.0-rc.1) |
-| Blade OS | [mixtile-talos v0.2.0-rc.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.2.0-rc.1) (this repository) |
-| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.1.0-rc.3](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.1.0-rc.3) |
+| Protocol | OpenMIOP v4 framing + per-connection features (RX doorbell, multiqueue), push mode to the BMC |
+| Blade driver | [pcie-ep-net v0.3.0-rc.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.3.0-rc.1) |
+| Blade OS | [mixtile-talos v0.3.0-rc.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.3.0-rc.1) (this repository) |
+| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.1.0-rc.5](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.1.0-rc.5) (`omi-rc`; rc.1-rc.4 with the helper work too) |
 
-The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.2.0-rc.1)
+The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.3.0-rc.1)
 lists the installer image digest, the disk image, DTB, U-Boot, module and
 checksums. What changed: [CHANGELOG.md](CHANGELOG.md). Details of the
 openmiop integration: [docs/openmiop.md](docs/openmiop.md).
@@ -82,7 +82,7 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:4bcc35ac9f54666f7e47ee55f7a7aa6f
    talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:4bcc35ac9f54666f7e47ee55f7a7aa6f809b6c04d7d6338d1b38197f84571af2 --stage --drain=false
    ```
 
-   New nodes: write `openmiop-0.2.0-rc.1-blade3-talos-1.14.2-arm64.raw.xz` **from this release** (see
+   New nodes: write `openmiop-0.3.0-rc.1-blade3-talos-1.14.2-arm64.raw.xz` **from this release** (see
    [Install from macOS](#install-from-macos)); check that the console
    shows `enabling system extension openmiop`. Then apply the machine
    configuration with `machine.install.image` set to the same reference
@@ -100,7 +100,7 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:4bcc35ac9f54666f7e47ee55f7a7aa6f
 
    ```sh
    talosctl -n <node> read /proc/cmdline       # no module.sig_enforce
-   talosctl -n <node> get extensions           # openmiop 0.2.0-rc.1-v1.14.2
+   talosctl -n <node> get extensions           # openmiop 0.3.0-rc.1-v1.14.2
    talosctl -n <node> dmesg | grep openmiop    # link up, node N, peer M up
    talosctl -n <node> get links | grep omi0    # alias omi0 on enx<mac>, up
    ping -c3 -M do -s 8972 10.20.0.<node>       # from another fabric member
@@ -144,7 +144,8 @@ The final images use the Talos v1.14.2 kernel (6.18.54-talos) and include:
 - `ghcr.io/siderolabs/iscsi-tools:v0.2.0`
 - `ghcr.io/siderolabs/panfrost:20260916-v1.14.2`
 - `ghcr.io/siderolabs/rockchip-rknn:v1.14.2`
-- openmiop `0.2.0-rc.1-v1.14.2` (built by this repository)
+- openmiop `0.3.0-rc.1-v1.14.2` (built by this repository)
+- `blade3-nvme-recover` and `blade3-leds` modules in the openmiop extension (NVMe back after a Cluster Box PERST#, port LEDs)
 
 DRBD and ZFS therefore match the running official Talos kernel release,
 module ABI and signing key.
