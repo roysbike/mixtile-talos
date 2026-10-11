@@ -14,7 +14,7 @@ modules, as in 0.2.0-rc.1.
 
 ### Changed
 
-- openmiop 0.3.0-rc.1-v1.14.2 from roysbike/pcie-ep-net @OPENMIOP_TAG_REF@
+- openmiop 0.3.0-rc.1-v1.14.2 from roysbike/pcie-ep-net `544f138`
   (tag v0.3.0-rc.1): push mode (the Cluster Box never reads a blade),
   P2P reconnect without the Cluster Box after a fabric reset, and a
   peer that stalls right after it connects is connected again after
