@@ -5,12 +5,21 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0-rc.1] - 2026-10-11
+
+openmiop v0.3 (push mode, blades reconnect without the Cluster Box) and
+the Blade 3 NVMe recovery after a Cluster Box reboot. Part of OpenMIOP
+Stack v0.3.0-rc.1. Official Talos v1.14.2 kernel (6.18.54-talos) and
+modules, as in 0.2.0-rc.1.
+
 ### Changed
 
-- openmiop 0.3.0-dev.2 (pcie-ep-net 42010d4): push mode, and a peer that
-  stalls right after it connects is connected again after 2 s instead
-  of being dropped until it is reset. Running on all four blades since
-  2026-10-11.
+- openmiop 0.3.0-rc.1-v1.14.2 from roysbike/pcie-ep-net `544f138`
+  (tag v0.3.0-rc.1): push mode (the Cluster Box never reads a blade),
+  P2P reconnect without the Cluster Box after a fabric reset, and a
+  peer that stalls right after it connects is connected again after
+  2 s instead of being dropped until it is reset. Works with the BMC
+  helper and with the `omi-rc` module. See the pcie-ep-net changelog.
 
 ### Added
 
@@ -21,28 +30,37 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   restores the Root Port and NVMe config space saved at load time, asks
   for 8 GT/s again and resets the NVMe with `pci_reset_function()`, so
   nvme re-initialises the controller and retries the waiting I/O.
-  Tested on .108 with hot resets (secondary bus reset pulse) under
-  `dd` load: NVMe back in ~1.6 s, no I/O error, zpool ONLINE, link at
-  8 GT/s. Must finish within the nvme I/O timeout (30 s).
+  Must finish within the nvme I/O timeout (30 s).
 - DTB: no `reset-gpios` on pcie3x2 (the shared PERST#), as in the vendor
   U-Boot.
-
-### Removed
-
-- The own kernel and DTB change from PR #10 (NVMe PERST# recovery). The
-  installer replaced only vmlinuz and kept the official modules; the
-  kernel rejects them (`failed to validate module [sdhci] BTF: -22`),
-  so there is no eMMC, NVMe or end0 and Talos boots into maintenance
-  mode. Back on the official kernel until the modules are built with
-  it.
-
-### Added
-
 - `blade3-leds` module in the openmiop extension: the Blade 3 RTL8125
   port LEDs now light at any link speed and blink on activity (from
   reset they only show 10/100/1000 Mbit/s activity on the wired LEDs, so
   a 2.5G port stayed dark after boot). Loaded with r8169 by PCI ID;
   `mode=` sets the LED selector.
+
+### Removed
+
+- The own kernel and DTB change from PR #10 (NVMe PERST# recovery in
+  the kernel). The installer replaced only vmlinuz and kept the official
+  modules; the kernel rejects them (`failed to validate module [sdhci]
+  BTF: -22`), so there is no eMMC, NVMe or end0 and Talos boots into
+  maintenance mode. Never released; do not install development images
+  built between PR #10 and PR #11 (e.g. `ci-35-eacfee9f`).
+
+### Tested
+
+- Four Blade 3 (three control planes, one worker) on development builds
+  with the same kernel, DTB, extensions and driver source as this
+  release (`ci-41-be59ad07`), staged upgrades one node at a time.
+- NVMe recovery: hot resets (secondary bus reset pulse) under `dd` load
+  on one blade: NVMe back in ~1.6 s, no I/O error, zpool ONLINE, 8 GT/s.
+  A Cluster Box reboot with all four blades on it (2026-10-11): NVMe
+  back on every blade ~6 s after PERST#, no I/O or ZFS errors, DRBD and
+  etcd fine, P2P back by itself.
+- Push mode: `omi-rc` loaded on the BMC instead of the helper, all four
+  blades active in 1.6 s without P2P interruption; a blade reset by
+  `nodectl` with release first came back and its peers reconnected.
 
 ## [0.2.0-rc.1] - 2026-10-08
 
@@ -218,6 +236,7 @@ DTB, extensions and openmiop driver source as this release.
 - Not hardware-tested: installing from the raw disk image of this build, NPU/GPU workloads (`rocket` and `panthor` load), VFIO, more
   than four blades.
 
+[0.3.0-rc.1]: https://github.com/roysbike/mixtile-talos/releases/tag/v0.3.0-rc.1
 [0.2.0-rc.1]: https://github.com/roysbike/mixtile-talos/releases/tag/v0.2.0-rc.1
 [0.1.0-rc.2]: https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.2
 [0.1.0-rc.1]: https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.1
