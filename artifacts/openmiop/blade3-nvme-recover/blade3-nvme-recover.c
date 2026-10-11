@@ -71,6 +71,19 @@ static struct port ports[MAX_PORTS];
 static unsigned int nports;
 static struct task_struct *task;
 
+/* Ask for the top speed again: the link down resets the port logic bit
+ * that dw_pcie_setup_rc() set, and the link trains to 2.5 GT/s only.
+ * In L0 the write starts the speed change, otherwise the next training
+ * does it.
+ */
+static void speed_change(struct dw_pcie *pci)
+{
+	u32 val = dw_pcie_readl_dbi(pci, PCIE_LINK_WIDTH_SPEED_CONTROL);
+
+	dw_pcie_writel_dbi(pci, PCIE_LINK_WIDTH_SPEED_CONTROL,
+			   val | PORT_LOGIC_SPEED_CHANGE);
+}
+
 static void retrain(struct port *p)
 {
 	struct dw_pcie *pci = p->pci;
@@ -80,6 +93,7 @@ static void retrain(struct port *p)
 	 */
 	if (pci->ops && pci->ops->stop_link)
 		pci->ops->stop_link(pci);
+	speed_change(pci);
 	if (pci->ops && pci->ops->start_link)
 		pci->ops->start_link(pci);
 	p->retrained = jiffies;
@@ -120,6 +134,9 @@ static void port_poll(struct port *p)
 		 jiffies_to_msecs(jiffies - p->down_since));
 	pci_load_saved_state(p->rp, p->rp_saved);
 	pci_restore_state(p->rp);
+	/* Target speed (LNKCTL2) is back: change up before the reset. */
+	speed_change(p->pci);
+	msleep(100);
 	pci_load_saved_state(p->nvme, p->nvme_saved);
 	pci_restore_state(p->nvme);
 	ret = pci_reset_function(p->nvme);
