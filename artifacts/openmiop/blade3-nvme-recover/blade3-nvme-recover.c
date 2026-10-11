@@ -20,8 +20,10 @@
  * reset_done: the controller is brought up again with its queues and
  * namespaces, and the I/O that waited is retried. That has to happen
  * before the nvme I/O timeout (30 s) gives the controller up.
- * pci_reset_function() saves the config space it finds, and after PERST#
- * the BARs are gone; so the config space saved at load time goes back
+ * The link down also resets the non-sticky registers of the Root Port
+ * (command, bus numbers), and after PERST# the BARs of the NVMe are gone,
+ * while pci_reset_function() saves and restores the config space it
+ * finds. So the config space of both, saved at load time, goes back
  * first.
  *
  * It does not bind to the device; nvme stays its driver.
@@ -55,8 +57,10 @@ MODULE_PARM_DESC(recoveries, "NVMe resets done after a link down (read only)");
 
 struct port {
 	struct pci_dev *nvme;
+	struct pci_dev *rp;		/* Root Port above it */
 	struct dw_pcie *pci;
-	struct pci_saved_state *saved;	/* config space from load time */
+	/* Config space from load time */
+	struct pci_saved_state *nvme_saved, *rp_saved;
 	bool up;
 	unsigned long down_since;
 	unsigned long up_since;		/* link back since, 0: not yet */
@@ -114,7 +118,9 @@ static void port_poll(struct port *p)
 		return;
 	dev_info(&p->nvme->dev, "link up after %u ms, resetting the NVMe\n",
 		 jiffies_to_msecs(jiffies - p->down_since));
-	pci_load_saved_state(p->nvme, p->saved);
+	pci_load_saved_state(p->rp, p->rp_saved);
+	pci_restore_state(p->rp);
+	pci_load_saved_state(p->nvme, p->nvme_saved);
 	pci_restore_state(p->nvme);
 	ret = pci_reset_function(p->nvme);
 	recoveries++;
@@ -157,7 +163,8 @@ static void put_ports(void)
 {
 	while (nports) {
 		nports--;
-		kfree(ports[nports].saved);
+		kfree(ports[nports].rp_saved);
+		kfree(ports[nports].nvme_saved);
 		pci_dev_put(ports[nports].nvme);
 	}
 }
@@ -169,18 +176,27 @@ static int __init recover_init(void)
 	while (nports < MAX_PORTS &&
 	       (nvme = pci_get_class(PCI_CLASS_STORAGE_EXPRESS, nvme))) {
 		struct dw_pcie *pci = nvme_host(nvme);
+		struct port *p;
 
 		if (!pci)
 			continue;
+		p = &ports[nports];
+		p->rp = pci_upstream_bridge(nvme);
+		pci_save_state(p->rp);
+		p->rp_saved = pci_store_saved_state(p->rp);
 		pci_save_state(nvme);
-		ports[nports].saved = pci_store_saved_state(nvme);
-		if (!ports[nports].saved)
+		p->nvme_saved = pci_store_saved_state(nvme);
+		if (!p->rp_saved || !p->nvme_saved) {
+			kfree(p->rp_saved);
+			kfree(p->nvme_saved);
 			continue;
-		ports[nports].nvme = pci_dev_get(nvme);
-		ports[nports].pci = pci;
-		ports[nports].up = dw_pcie_link_up(pci);
+		}
+		/* Holding the NVMe holds its Root Port too. */
+		p->nvme = pci_dev_get(nvme);
+		p->pci = pci;
+		p->up = dw_pcie_link_up(pci);
 		dev_info(&nvme->dev, "watching the link (%s)\n",
-			 ports[nports].up ? "up" : "down");
+			 p->up ? "up" : "down");
 		nports++;
 	}
 	pci_dev_put(nvme);
