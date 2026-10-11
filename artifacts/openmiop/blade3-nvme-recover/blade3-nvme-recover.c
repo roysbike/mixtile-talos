@@ -41,9 +41,9 @@ static unsigned int retrain_ms = 1000;
 module_param(retrain_ms, uint, 0644);
 MODULE_PARM_DESC(retrain_ms, "Restart the LTSSM this often while the link is down, in ms (default 1000)");
 
-static unsigned int settle_ms = 100;
-module_param(settle_ms, uint, 0644);
-MODULE_PARM_DESC(settle_ms, "Wait after the link came back before the NVMe reset, in ms (default 100)");
+static unsigned int stable_ms = 1000;
+module_param(stable_ms, uint, 0644);
+MODULE_PARM_DESC(stable_ms, "The link must stay up this long before the NVMe reset, in ms (default 1000)");
 
 static unsigned int recoveries;
 module_param(recoveries, uint, 0444);
@@ -54,6 +54,7 @@ struct port {
 	struct dw_pcie *pci;
 	bool up;
 	unsigned long down_since;
+	unsigned long up_since;		/* link back since, 0: not yet */
 	unsigned long retrained;
 };
 
@@ -80,26 +81,41 @@ static void port_poll(struct port *p)
 	bool up = dw_pcie_link_up(p->pci);
 	int ret;
 
-	if (p->up && !up) {
+	if (p->up) {
+		if (up)
+			return;
 		p->up = false;
 		p->down_since = jiffies;
+		p->up_since = 0;
 		dev_warn(&p->nvme->dev, "link down, restarting it\n");
 		retrain(p);
-	} else if (!p->up && up) {
-		msleep(settle_ms);
-		dev_info(&p->nvme->dev, "link up after %u ms, resetting the NVMe\n",
-			 jiffies_to_msecs(jiffies - p->down_since));
-		ret = pci_reset_function(p->nvme);
-		recoveries++;
-		if (ret)
-			dev_err(&p->nvme->dev, "reset failed: %d\n", ret);
-		else
-			dev_info(&p->nvme->dev, "reset done\n");
-		p->up = true;
-	} else if (!p->up &&
-		   time_after(jiffies, p->retrained + msecs_to_jiffies(retrain_ms))) {
-		retrain(p);
+		return;
 	}
+	if (!up) {
+		p->up_since = 0;
+		if (time_after(jiffies, p->retrained + msecs_to_jiffies(retrain_ms)))
+			retrain(p);
+		return;
+	}
+	/* The link can come up for a moment while the device is still held
+	 * in reset (PERST#, a hot reset): a reset then finds no device and
+	 * nvme gives the controller up for good. Wait until the link stayed
+	 * up and the device answers config reads.
+	 */
+	if (!p->up_since)
+		p->up_since = jiffies | 1;
+	if (time_before(jiffies, p->up_since + msecs_to_jiffies(stable_ms)) ||
+	    !pci_device_is_present(p->nvme))
+		return;
+	dev_info(&p->nvme->dev, "link up after %u ms, resetting the NVMe\n",
+		 jiffies_to_msecs(jiffies - p->down_since));
+	ret = pci_reset_function(p->nvme);
+	recoveries++;
+	if (ret)
+		dev_err(&p->nvme->dev, "reset failed: %d\n", ret);
+	else
+		dev_info(&p->nvme->dev, "reset done\n");
+	p->up = true;
 }
 
 static int recover_thread(void *data)
