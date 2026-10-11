@@ -40,11 +40,11 @@ openmiop integration: [docs/openmiop.md](docs/openmiop.md).
 
 ### Install or upgrade a Blade 3 node
 
-Installer for v0.2.0-rc.1 (immutable digest; the tag
-`ghcr.io/roysbike/mixtile-talos-installer:v0.2.0-rc.1` resolves to it):
+Installer for v0.3.0-rc.1 (immutable digest; the tag
+`ghcr.io/roysbike/mixtile-talos-installer:v0.3.0-rc.1` resolves to it):
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer@sha256:4bcc35ac9f54666f7e47ee55f7a7aa6f809b6c04d7d6338d1b38197f84571af2
+ghcr.io/roysbike/mixtile-talos-installer@sha256:5ea33dcca15f4ffcfcf6b58c97066b520018de60f5533600e7bd6ac93e3c4e0b
 ```
 
 1. Add the openmiop documents to the machine configuration (one address
@@ -79,7 +79,7 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:4bcc35ac9f54666f7e47ee55f7a7aa6f
 2. Upgrade (one node at a time; mind etcd quorum):
 
    ```sh
-   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:4bcc35ac9f54666f7e47ee55f7a7aa6f809b6c04d7d6338d1b38197f84571af2 --stage --drain=false
+   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:5ea33dcca15f4ffcfcf6b58c97066b520018de60f5533600e7bd6ac93e3c4e0b --stage --drain=false
    ```
 
    New nodes: write `openmiop-0.3.0-rc.1-blade3-talos-1.14.2-arm64.raw.xz` **from this release** (see
