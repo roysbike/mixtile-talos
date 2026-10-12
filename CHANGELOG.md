@@ -5,6 +5,25 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-12
+
+First stable release of the OpenMIOP Stack v0.3.0 Blade OS. Same
+kernel, DTB, modules and openmiop driver source as 0.3.0-rc.1.
+
+### Changed
+
+- openmiop 0.3.0-v1.14.2 from roysbike/pcie-ep-net `a4bc7ef` (tag
+  v0.3.0). The blade driver is unchanged since v0.3.0-rc.1; v0.3.0-rc.2
+  only fixed the Cluster Box module `omi-rc`.
+
+### Tested
+
+- v0.3.0-rc.1 on all four lab blades with ClusterBox firmware
+  v0.1.0-rc.6 (`omi-rc` loaded at boot): blades active 1.6 s after the
+  module loads, NVMe live after the BMC reboot, a `nodectl reset` of a
+  blade back in 14.5 s (node Ready in ~46 s), iperf3 25.0 Gbit/s with
+  four senders at once.
+
 ## [0.3.0-rc.1] - 2026-10-11
 
 openmiop v0.3 (push mode, blades reconnect without the Cluster Box) and
