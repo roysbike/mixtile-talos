@@ -9,7 +9,8 @@
 > быстрее, чем в v0.3, с прошивкой ClusterBox v0.2.0; исправлены ложные
 > «зависания» пиров под нагрузкой. Установка, обновление по digest, проверка и ограничения — в
 > [README.md](README.md#openmiop-stack-v040), [CHANGELOG.md](CHANGELOG.md)
-> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.4.0). Установщик: `ghcr.io/roysbike/mixtile-talos-installer:v0.4.0` (digest — на странице релиза).
+> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.4.0). Установщик:
+> `ghcr.io/roysbike/mixtile-talos-installer@sha256:a7a0df6c170266246f5c162d9ad41088ceac1e55515557606822cf3446363fb9`.
 >
 > Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
 > `--image` и с тем же образом в `machine.install.image`.
