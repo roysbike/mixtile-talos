@@ -2,20 +2,14 @@
 
 [English](README.md) · [Русский](README.ru.md)
 
-> **Релиз v0.3.0 (OpenMIOP Stack v0.3.0 и v0.3.1, протокол v4, push-режим):**
+> **Релиз v0.4.0 (OpenMIOP Stack v0.4.0, протокол v4, push-режим, gateway pull):**
 > образ Talos со встроенным openmiop (Ethernet `omi0` между блейдами
 > Cluster Box по PCIe) и восстановлением NVMe Blade 3 после перезагрузки
-> Cluster Box. Установка, обновление по digest, проверка и ограничения — в
-> [README.md](README.md#openmiop-stack-v031), [CHANGELOG.md](CHANGELOG.md)
-> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.3.0).
->
-> Релиз-кандидат **v0.4.0-rc.2** (OpenMIOP Stack v0.4.0-rc.2): openmiop
-> 0.4.0-rc.2 с gateway pull — трафик из LAN и интернета к блейдам примерно
-> в 1,5 раза быстрее с прошивкой ClusterBox v0.2.0-rc.1 и новее
-> ([v0.4.0-rc.1](docs/release-notes/v0.4.0-rc.1.md)); в rc.2 исправлена
-> потеря шлюза блейдом под сильной нагрузкой, см.
-> [release notes](docs/release-notes/v0.4.0-rc.2.md). Установщик:
-> `ghcr.io/roysbike/mixtile-talos-installer@sha256:3b5aa22a7b716995d7ab4b9576fdb0892f8b3074beb46bc1742fe4e5c6d2b2c9`.
+> Cluster Box. Трафик из LAN и интернета к блейдам примерно в 2 раза
+> быстрее, чем в v0.3, с прошивкой ClusterBox v0.2.0; исправлены ложные
+> «зависания» пиров под нагрузкой. Установка, обновление по digest, проверка и ограничения — в
+> [README.md](README.md#openmiop-stack-v040), [CHANGELOG.md](CHANGELOG.md)
+> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.4.0). Установщик: `ghcr.io/roysbike/mixtile-talos-installer:v0.4.0` (digest — на странице релиза).
 >
 > Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
 > `--image` и с тем же образом в `machine.install.image`.

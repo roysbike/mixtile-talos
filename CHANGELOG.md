@@ -5,6 +5,32 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-13
+
+Blade OS of OpenMIOP Stack v0.4.0 (stable). Same Talos v1.14.2 kernel, DTB,
+U-Boot and extensions as 0.3.0; openmiop 0.4.0-v1.14.2 from
+roysbike/pcie-ep-net `c607b86` (tag v0.4.0; driver code identical to
+0.4.0-rc.2). Sums up 0.4.0-rc.1 and 0.4.0-rc.2.
+
+### Changed
+
+- Gateway pull: with ClusterBox firmware v0.2.0 (or any `omi-rc` from
+  pcie-ep-net v0.4.0) the blade reads LAN and internet traffic from BMC
+  memory with an eDMA read channel; LAN -> blade through the BMC
+  92 -> 193-198 Mbit/s.
+
+### Fixed
+
+- False peer stalls under load and the gateway v2 reconnect deadlock that
+  could cut a blade off the Cluster Box gateway (0.4.0-rc.2).
+
+### Tested
+
+- 0.4.0-rc.2 (same driver) on all four blades since 2026-10-13 16:46Z,
+  BMC on firmware v0.2.0-rc.2: gateway stress clean on .108 and .133,
+  BMC reboot (firmware flash) recovered with NVMe live and gateway pull on
+  all blades.
+
 ## [0.4.0-rc.2] - 2026-10-13
 
 Blade OS of OpenMIOP Stack v0.4.0-rc.2. Same Talos v1.14.2 kernel, DTB,
