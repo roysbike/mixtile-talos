@@ -2,17 +2,48 @@
 
 [English](README.md) · [Русский](README.ru.md)
 
-> **Релиз v0.1.0-rc.1 (OpenMIOP Stack v0.1.0-rc.1, протокол v4):** образ Talos
-> со встроенным openmiop (Ethernet `omi0` между блейдами Cluster Box по
-> PCIe). Установка, обновление по digest, проверка и ограничения — в
-> [README.md](README.md#openmiop-stack-v010-rc1), [CHANGELOG.md](CHANGELOG.md)
-> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.1.0-rc.1).
+> **Релиз v0.3.0 (OpenMIOP Stack v0.3.0 и v0.3.1, протокол v4, push-режим):**
+> образ Talos со встроенным openmiop (Ethernet `omi0` между блейдами
+> Cluster Box по PCIe) и восстановлением NVMe Blade 3 после перезагрузки
+> Cluster Box. Установка, обновление по digest, проверка и ограничения — в
+> [README.md](README.md#openmiop-stack-v031), [CHANGELOG.md](CHANGELOG.md)
+> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.3.0).
+>
+> Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
+> `--image` и с тем же образом в `machine.install.image`.
 
 Этот репозиторий собирает ARM64 SBC overlay и загрузочные образы Talos Linux
 `v1.14.2` для Mixtile Blade 3 (RK3588), в том числе для плат в Mixtile Cluster Box.
 
 Здесь остаются сборка образа и прошивка eMMC. Установка Cozystack, классы
 хранения и скрипты доступа к UI живут в отдельном проекте `cozystack-box-mixtile`.
+
+## Оборудование и для кого это
+
+**Mixtile Cluster Box** — компактное шасси на четыре платы **Mixtile
+Blade 3**. Внутри:
+
+* управляющий контроллер (BMC): MediaTek MT7620A (MIPS) с OpenWrt. Он
+  включает, выключает и перезагружает блейды, даёт доступ к их
+  последовательным консолям и служит корневым комплексом PCIe всего шасси;
+* PCIe-коммутатор ASMedia ASM2824 (Gen3): линк Gen3 x2 к каждому слоту и
+  линк Gen1 x1 к BMC.
+
+**Mixtile Blade 3** — вычислительная плата на Rockchip RK3588
+(4× Cortex-A76 + 4× Cortex-A55) с eMMC и слотом M.2 NVMe. Её контроллер
+PCIe 3.0 x4 разделён пополам: линии 0-1 идут к коммутатору Cluster Box,
+линии 2-3 — к NVMe. Blade 3 работает и сама по себе, без Cluster Box.
+
+Mixtile поставляет шасси со своей прошивкой BMC и своим сетевым
+драйвером для блейдов (MIOP). **OpenMIOP Stack** — независимая открытая
+замена для владельцев Cluster Box с платами Blade 3 (или отдельной
+Blade 3), которым нужно:
+
+| Что нужно | Репозиторий |
+| --- | --- |
+| Ethernet между блейдами через PCIe-коммутатор (`omi0`, ~5 Гбит/с на поток, ~25 Гбит/с при четырёх отправителях) | [pcie-ep-net](https://github.com/roysbike/pcie-ep-net) |
+| Talos Linux (Kubernetes) на Blade 3, в Cluster Box или отдельно | [mixtile-talos](https://github.com/roysbike/mixtile-talos) (этот репозиторий) |
+| Свежий OpenWrt на BMC: питание и консоли блейдов, обновление прошивки, сторона OpenMIOP на BMC | [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) |
 
 ## Базовые версии
 
