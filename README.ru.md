@@ -12,7 +12,8 @@
 > Релиз-кандидат **v0.4.0-rc.1** (OpenMIOP Stack v0.4.0-rc.1): openmiop
 > 0.4.0-rc.1 с gateway pull — трафик из LAN и интернета к блейдам примерно
 > в 1,5 раза быстрее с прошивкой ClusterBox v0.2.0-rc.1, см.
-> [release notes](docs/release-notes/v0.4.0-rc.1.md).
+> [release notes](docs/release-notes/v0.4.0-rc.1.md). Установщик:
+> `ghcr.io/roysbike/mixtile-talos-installer@sha256:1f9aed3000a8db358e4576adaef02315e78d998673269b8e981ef80ec3d1ebb6`.
 >
 > Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
 > `--image` и с тем же образом в `machine.install.image`.
