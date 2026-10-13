@@ -37,10 +37,10 @@ single Blade 3) and want:
 | Talos Linux (Kubernetes) on Blade 3, in a Cluster Box or on its own | [mixtile-talos](https://github.com/roysbike/mixtile-talos) (this repository) |
 | Current OpenWrt on the BMC: blade power and consoles, firmware updates, the BMC side of OpenMIOP | [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) |
 
-## OpenMIOP Stack v0.4.0
+## OpenMIOP Stack v0.5.0
 
-This repository's release **v0.4.0** is the Blade OS of the OpenMIOP
-Stack v0.4.0: Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
+This repository's release **v0.5.0** is the Blade OS of the OpenMIOP
+Stack v0.5.0: Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
 Mixtile Cluster Box over its PCIe switch, built into the installer image.
 
 ```
@@ -54,30 +54,31 @@ Mixtile Cluster Box over its PCIe switch, built into the installer image.
                                               Talos + openmiop, omi0 10.20.0.x
 ```
 
-| OpenMIOP Stack v0.4.0 | |
+| OpenMIOP Stack v0.5.0 | |
 | --- | --- |
-| Protocol | OpenMIOP v4 framing + per-connection features (RX doorbell, multiqueue), push mode and gateway pull to the BMC |
-| Blade driver, BMC module | [pcie-ep-net v0.4.0](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.4.0) |
-| Blade OS | [mixtile-talos v0.4.0](https://github.com/roysbike/mixtile-talos/releases/tag/v0.4.0) (this repository) |
-| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.2.0](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.2.0) (`omi-rc` with gateway pull; firmware v0.1.x works without it) |
+| Protocol | OpenMIOP v4 framing + per-connection features (RX doorbell, multiqueue), push mode, gateway pull and zero-copy to the BMC |
+| Blade driver, BMC module | [pcie-ep-net v0.5.0](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.5.0) |
+| Blade OS | [mixtile-talos v0.5.0](https://github.com/roysbike/mixtile-talos/releases/tag/v0.5.0) (this repository) |
+| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.3.0](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.3.0) (`omi-rc` with gateway pull and zero-copy; v0.2.0 works without zero-copy, v0.1.x without gateway pull) |
 
-Gateway pull makes LAN and internet traffic to the blades about twice as
-fast as in v0.3 (LAN -> blade through the BMC 92 -> 193-198 Mbit/s), and
-v0.4.0 fixes false peer stalls under load that could cut a blade off the
-gateway. Previous: OpenMIOP Stack v0.3.1 (mixtile-talos v0.3.0).
+Gateway pull with zero-copy makes LAN and internet traffic to the blades
+about three times as fast as in v0.3 (LAN -> blade through the BMC
+92 -> 275-281 Mbit/s; v0.4.0: 193-198). Previous: OpenMIOP Stack v0.4.0
+(mixtile-talos v0.4.0), v0.3.1 (mixtile-talos v0.3.0).
 
-The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.4.0)
+The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.5.0)
 lists the installer image digest, the disk image, DTB, U-Boot, module and
 checksums. What changed: [CHANGELOG.md](CHANGELOG.md). Details of the
 openmiop integration: [docs/openmiop.md](docs/openmiop.md).
 
 ### Install or upgrade a Blade 3 node
 
-Installer for v0.4.0 (immutable digest; the tag
-`ghcr.io/roysbike/mixtile-talos-installer:v0.4.0` resolves to it):
+Installer for v0.5.0 (pin the immutable digest from the
+[release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.5.0);
+the tag below resolves to it):
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer@sha256:a7a0df6c170266246f5c162d9ad41088ceac1e55515557606822cf3446363fb9
+ghcr.io/roysbike/mixtile-talos-installer:v0.5.0
 ```
 
 1. Add the openmiop documents to the machine configuration (one address
@@ -113,7 +114,7 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:a7a0df6c170266246f5c162d9ad41088
    the databases are healthy again before the next node):
 
    ```sh
-   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:a7a0df6c170266246f5c162d9ad41088ceac1e55515557606822cf3446363fb9 --stage
+   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.5.0 --stage
    ```
 
    Keep the default drain. A roll with `--drain=false` left DRBD replicas
