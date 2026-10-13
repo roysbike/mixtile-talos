@@ -5,6 +5,25 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-14
+
+Blade OS of OpenMIOP Stack v0.5.0. Same Talos v1.14.2 kernel, DTB, U-Boot
+and extensions as 0.4.0; only openmiop changes.
+
+### Added
+
+- openmiop 0.5.0-v1.14.2 from roysbike/pcie-ep-net `6fbcff1` (tag v0.5.0):
+  gateway zero-copy. With ClusterBox firmware v0.3.0 the blade reads
+  unicast frames from the BMC's stack straight from the BMC's buffers;
+  LAN -> blade through the BMC 196-198 -> 275-281 Mbit/s. Module parameter
+  `gw_zc`, counter `rx_gw_zc`. Works with older BMC firmware (copy path).
+
+### Tested
+
+- The same driver (test image ci-57, openmiop 0.5.0-dev.1) on .108 with
+  the v0.5.0 `omi-rc` on the BMC: SHA-256 of 512 MB 3/3, 16 stress rounds
+  clean, no BMC memory leak; v0.4.0 blades alongside on the copy path.
+
 ## [0.4.0] - 2026-10-13
 
 Blade OS of OpenMIOP Stack v0.4.0 (stable). Same Talos v1.14.2 kernel, DTB,
