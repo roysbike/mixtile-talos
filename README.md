@@ -9,10 +9,38 @@ Mixtile Cluster Box.
 Image build and eMMC flashing stay here. Cozystack bootstrap, storage classes,
 and UI access scripts belong in the separate `cozystack-box-mixtile` project.
 
-## OpenMIOP Stack v0.3.0
+## Hardware and who this is for
+
+The **Mixtile Cluster Box** is a small chassis for four **Mixtile Blade 3**
+boards. Inside it:
+
+* a management controller (BMC): MediaTek MT7620A (MIPS) with OpenWrt. It
+  switches the blades on and off, resets them, gives access to their
+  serial consoles and is the PCIe root complex of the box;
+* an ASMedia ASM2824 PCIe Gen3 switch: a Gen3 x2 link to each blade slot
+  and a Gen1 x1 uplink to the BMC.
+
+The **Mixtile Blade 3** is a compute board with the Rockchip RK3588
+(4× Cortex-A76 + 4× Cortex-A55), eMMC and an M.2 NVMe slot. Its PCIe 3.0
+x4 controller is split in two: lanes 0-1 go to the Cluster Box switch,
+lanes 2-3 to the NVMe. A Blade 3 also works on its own, without a
+Cluster Box.
+
+Mixtile ships the box with its own BMC firmware and its own blade
+network driver (MIOP). The **OpenMIOP Stack** is an independent open
+replacement for people who own a Cluster Box with Blade 3 boards (or a
+single Blade 3) and want:
+
+| You want | Repository |
+| --- | --- |
+| Ethernet between the blades over the PCIe switch (`omi0`, ~5 Gbit/s per flow, ~25 Gbit/s with four senders) | [pcie-ep-net](https://github.com/roysbike/pcie-ep-net) |
+| Talos Linux (Kubernetes) on Blade 3, in a Cluster Box or on its own | [mixtile-talos](https://github.com/roysbike/mixtile-talos) (this repository) |
+| Current OpenWrt on the BMC: blade power and consoles, firmware updates, the BMC side of OpenMIOP | [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) |
+
+## OpenMIOP Stack v0.3.1
 
 This repository's release **v0.3.0** is the Blade OS of the OpenMIOP
-stack: Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
+Stack v0.3.0 and v0.3.1 (v0.3.1 changed only the Cluster Box module): Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
 Mixtile Cluster Box over its PCIe switch, built into the installer image.
 
 ```
@@ -26,12 +54,12 @@ Mixtile Cluster Box over its PCIe switch, built into the installer image.
                                               Talos + openmiop, omi0 10.20.0.x
 ```
 
-| OpenMIOP Stack v0.3.0 | |
+| OpenMIOP Stack v0.3.1 | |
 | --- | --- |
 | Protocol | OpenMIOP v4 framing + per-connection features (RX doorbell, multiqueue), push mode to the BMC |
-| Blade driver | [pcie-ep-net v0.3.0](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.3.0) |
+| Blade driver, BMC module | [pcie-ep-net v0.3.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.3.1) (blade driver as in v0.3.0) |
 | Blade OS | [mixtile-talos v0.3.0](https://github.com/roysbike/mixtile-talos/releases/tag/v0.3.0) (this repository) |
-| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.1.0](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.1.0) (`omi-rc`; rc.1-rc.4 with the helper work too) |
+| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.1.1](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.1.1) (`omi-rc`; firmware v0.1.0 works too) |
 
 The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.3.0)
 lists the installer image digest, the disk image, DTB, U-Boot, module and
@@ -76,11 +104,23 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:b0f03dec8757cee287c560b5d2a77ba0
    talosctl -n <node> patch mc --mode no-reboot -p @omi.yaml
    ```
 
-2. Upgrade (one node at a time; mind etcd quorum):
+2. Upgrade (one node at a time; mind etcd quorum; wait until DRBD and
+   the databases are healthy again before the next node):
 
    ```sh
-   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:b0f03dec8757cee287c560b5d2a77ba03d4c1ad2adcbf975b1bfc195ba7322b0 --stage --drain=false
+   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:b0f03dec8757cee287c560b5d2a77ba03d4c1ad2adcbf975b1bfc195ba7322b0 --stage
    ```
+
+   Keep the default drain. A roll with `--drain=false` left DRBD replicas
+   of a running database in different states and corrupted its ext4
+   (2026-10-12, Cozystack on DRBD 9.3.4).
+
+   Always pass `--image`, and set `machine.install.image` in the machine
+   configuration to the same reference: `talosctl upgrade` without
+   `--image` installs whatever that field still names. Do not set
+   `machine.install.grubUseUKICmdline: false`; with an old image in
+   `machine.install.image` this booted a kernel that rejected the
+   openmiop module (no `omi0`).
 
    New nodes: write `openmiop-0.3.0-blade3-talos-1.14.2-arm64.raw.xz` **from this release** (see
    [Install from macOS](#install-from-macos)); check that the console
@@ -108,9 +148,11 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:b0f03dec8757cee287c560b5d2a77ba0
 
 Rollback: `talosctl -n <node> rollback`.
 
-Known limitations: openmiop RX is polled (no interrupt-driven RX), no
-multiqueue, Talos receives ~20 % slower than Debian, BMC re-enumeration
-pauses the fabric ~1-2 s when a blade appears; see [CHANGELOG.md](CHANGELOG.md).
+Known limitations: one flow uses one queue (~4.7 Gbit/s per flow), no
+checksum offload, the BMC gateway is management-grade, a BMC reboot
+resets every blade link (blades reconnect after ~12 s and recover the
+NVMe); see [pcie-ep-net](https://github.com/roysbike/pcie-ep-net#known-limitations)
+and [CHANGELOG.md](CHANGELOG.md).
 
 ## Source baseline
 
