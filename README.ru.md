@@ -14,7 +14,8 @@
 > в 1,5 раза быстрее с прошивкой ClusterBox v0.2.0-rc.1 и новее
 > ([v0.4.0-rc.1](docs/release-notes/v0.4.0-rc.1.md)); в rc.2 исправлена
 > потеря шлюза блейдом под сильной нагрузкой, см.
-> [release notes](docs/release-notes/v0.4.0-rc.2.md).
+> [release notes](docs/release-notes/v0.4.0-rc.2.md). Установщик:
+> `ghcr.io/roysbike/mixtile-talos-installer@sha256:3b5aa22a7b716995d7ab4b9576fdb0892f8b3074beb46bc1742fe4e5c6d2b2c9`.
 >
 > Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
 > `--image` и с тем же образом в `machine.install.image`.

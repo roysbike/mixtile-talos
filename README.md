@@ -44,7 +44,8 @@ Release candidate **v0.4.0-rc.2** (OpenMIOP Stack v0.4.0-rc.2): openmiop
 with ClusterBox firmware v0.2.0-rc.1 or later
 ([v0.4.0-rc.1](docs/release-notes/v0.4.0-rc.1.md)); rc.2 fixes blades
 losing the gateway under heavy load, see the
-[release notes](docs/release-notes/v0.4.0-rc.2.md).
+[release notes](docs/release-notes/v0.4.0-rc.2.md). Installer:
+`ghcr.io/roysbike/mixtile-talos-installer@sha256:3b5aa22a7b716995d7ab4b9576fdb0892f8b3074beb46bc1742fe4e5c6d2b2c9`.
 The rest of this section describes the stable v0.3.0.
 
 This repository's release **v0.3.0** is the Blade OS of the OpenMIOP
