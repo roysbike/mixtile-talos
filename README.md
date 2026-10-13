@@ -73,12 +73,11 @@ openmiop integration: [docs/openmiop.md](docs/openmiop.md).
 
 ### Install or upgrade a Blade 3 node
 
-Installer for v0.5.0 (pin the immutable digest from the
-[release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.5.0);
-the tag below resolves to it):
+Installer for v0.5.0 (immutable digest; the tag
+`ghcr.io/roysbike/mixtile-talos-installer:v0.5.0` resolves to it):
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer:v0.5.0
+ghcr.io/roysbike/mixtile-talos-installer@sha256:483ced5412fd0d15ebbe467f6faf10dc96ea027188b7ca50e4b026179a66697a
 ```
 
 1. Add the openmiop documents to the machine configuration (one address
@@ -114,7 +113,7 @@ ghcr.io/roysbike/mixtile-talos-installer:v0.5.0
    the databases are healthy again before the next node):
 
    ```sh
-   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.5.0 --stage
+   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:483ced5412fd0d15ebbe467f6faf10dc96ea027188b7ca50e4b026179a66697a --stage
    ```
 
    Keep the default drain. A roll with `--drain=false` left DRBD replicas
