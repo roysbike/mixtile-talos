@@ -39,6 +39,12 @@ single Blade 3) and want:
 
 ## OpenMIOP Stack v0.3.1
 
+Release candidate **v0.4.0-rc.1** (OpenMIOP Stack v0.4.0-rc.1): openmiop
+0.4.0-rc.1 with gateway pull, LAN and internet to the blades ~1.5x faster
+with ClusterBox firmware v0.2.0-rc.1; see the
+[release notes](docs/release-notes/v0.4.0-rc.1.md). The rest of this
+section describes the stable v0.3.0.
+
 This repository's release **v0.3.0** is the Blade OS of the OpenMIOP
 Stack v0.3.0 and v0.3.1 (v0.3.1 changed only the Cluster Box module): Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
 Mixtile Cluster Box over its PCIe switch, built into the installer image.

@@ -9,6 +9,11 @@
 > [README.md](README.md#openmiop-stack-v031), [CHANGELOG.md](CHANGELOG.md)
 > и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.3.0).
 >
+> Релиз-кандидат **v0.4.0-rc.1** (OpenMIOP Stack v0.4.0-rc.1): openmiop
+> 0.4.0-rc.1 с gateway pull — трафик из LAN и интернета к блейдам примерно
+> в 1,5 раза быстрее с прошивкой ClusterBox v0.2.0-rc.1, см.
+> [release notes](docs/release-notes/v0.4.0-rc.1.md).
+>
 > Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
 > `--image` и с тем же образом в `machine.install.image`.
 
