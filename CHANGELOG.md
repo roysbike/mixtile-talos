@@ -5,6 +5,30 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0-rc.1] - 2026-10-13
+
+Blade OS of OpenMIOP Stack v0.4.0-rc.1. Same Talos v1.14.2 kernel, DTB,
+U-Boot and extensions as 0.3.0; only openmiop changes.
+
+### Changed
+
+- openmiop 0.4.0-rc.1-v1.14.2 from roysbike/pcie-ep-net `35884c8` (tag
+  v0.4.0-rc.1): gateway pull. With ClusterBox firmware v0.2.0-rc.1 (or
+  any `omi-rc` from pcie-ep-net v0.4.0-rc.1) the blade reads LAN and
+  internet traffic from BMC memory with an eDMA read channel instead of
+  the BMC writing it into the blade's BAR: ~1.5x faster. Module
+  parameter `gw_pull`, counters `rx_gw_pulls` / `rx_gw_pull_errors`.
+- Upgrade instructions: keep the default drain (no `--drain=false`).
+
+### Tested
+
+- The same driver source (test image ci-48-0269dbaa, openmiop
+  0.4.0-dev.1, pcie-ep-net 26441d4) on .108, BMC with the v0.4.0-rc.1
+  `omi-rc` code loaded by hand: LAN -> blade 141-145 Mbit/s (v0.3.0
+  blade at the same time: 92-95), internet -> blade 152-155 (97-106),
+  BMC -> blade 204 (130); 444 158 frames pulled, 0 errors; P2P to the
+  v0.3.0 blades unchanged (4 queues, doorbell), NVMe live.
+
 ## [0.3.0] - 2026-10-12
 
 First stable release of the OpenMIOP Stack v0.3.0 Blade OS. Same
