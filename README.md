@@ -39,11 +39,12 @@ single Blade 3) and want:
 
 ## OpenMIOP Stack v0.3.1
 
-Release candidate **v0.4.0-rc.1** (OpenMIOP Stack v0.4.0-rc.1): openmiop
-0.4.0-rc.1 with gateway pull, LAN and internet to the blades ~1.5x faster
-with ClusterBox firmware v0.2.0-rc.1; see the
-[release notes](docs/release-notes/v0.4.0-rc.1.md). Installer:
-`ghcr.io/roysbike/mixtile-talos-installer@sha256:1f9aed3000a8db358e4576adaef02315e78d998673269b8e981ef80ec3d1ebb6`.
+Release candidate **v0.4.0-rc.2** (OpenMIOP Stack v0.4.0-rc.2): openmiop
+0.4.0-rc.2 with gateway pull, LAN and internet to the blades ~1.5x faster
+with ClusterBox firmware v0.2.0-rc.1 or later
+([v0.4.0-rc.1](docs/release-notes/v0.4.0-rc.1.md)); rc.2 fixes blades
+losing the gateway under heavy load, see the
+[release notes](docs/release-notes/v0.4.0-rc.2.md).
 The rest of this section describes the stable v0.3.0.
 
 This repository's release **v0.3.0** is the Blade OS of the OpenMIOP

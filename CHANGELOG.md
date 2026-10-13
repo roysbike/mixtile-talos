@@ -5,6 +5,31 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0-rc.2] - 2026-10-13
+
+Blade OS of OpenMIOP Stack v0.4.0-rc.2. Same Talos v1.14.2 kernel, DTB,
+U-Boot and extensions as 0.4.0-rc.1; only openmiop changes.
+
+### Fixed
+
+- openmiop 0.4.0-rc.2-v1.14.2 from roysbike/pcie-ep-net `11c8e53` (tag
+  v0.4.0-rc.2). Under long blade -> LAN uploads (Cluster Box CPU at
+  99 %) a blade on 0.4.0-rc.1 could lose the gateway for good (no LAN,
+  internet, DNS, NTP over omi0) until the BMC's `omi-rc` was reloaded:
+  false peer stalls (progress was measured between two reads of one
+  pass, while the TX thread also picks up credit) and then a reconnect
+  to the BMC that left its ring looking full forever. The same false
+  stalls hit P2P peers (hundreds of stalls and reconnects under load).
+
+### Tested
+
+- The same driver source (test image ci-52, openmiop 0.4.0-dev.3,
+  pcie-ep-net 668278c) on .108: 21 stress rounds (3 parallel 300 MB
+  blade -> LAN uploads plus a 300 MB download through the BMC, BMC CPU
+  99 %), the last 15 during 240 s of P2P load at 8.7 Gbit/s: gateway up
+  throughout, 0 stalls, 0 reconnects, 0 late drops, 0 eDMA errors.
+  The 0.4.0-rc.1 driver lost the gateway in round 4 of the same test.
+
 ## [0.4.0-rc.1] - 2026-10-13
 
 Blade OS of OpenMIOP Stack v0.4.0-rc.1. Same Talos v1.14.2 kernel, DTB,
