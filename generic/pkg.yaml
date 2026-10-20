@@ -1,0 +1,17 @@
+name: sbc-mixtile-blade3-generic
+variant: scratch
+shell: /bin/bash
+dependencies:
+  - stage: base
+  - stage: mixtile-blade3-generic
+    platform: linux/arm64
+  - stage: profiles-generic
+  - stage: u-boot-mixtile-blade3
+    platform: linux/arm64
+  - stage: dtb-mixtile-blade3-generic
+    platform: linux/arm64
+    from: /dtb/rockchip/rk3588-mixtile-blade3.dtb
+    to: /rootfs/artifacts/arm64/dtb/rockchip/rk3588-mixtile-blade3.dtb
+finalize:
+  - from: /rootfs
+    to: /

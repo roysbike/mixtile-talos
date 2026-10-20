@@ -5,6 +5,16 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Generic Blade 3 image (`VARIANT=generic`, `generic/`): plain Talos for a
+  Blade 3 without the Cluster Box, no extensions, PCIe3 x4 as host, PCIe
+  SMMU on, the same mainline-style device tree as U-Boot, kernel arguments
+  as the sbc-rockchip boards. Laid out like a board in
+  siderolabs/sbc-rockchip (`mixtile-blade3`). CI builds it next to the
+  Cluster Box image; `verify-installer.sh` checks it with `VARIANT=generic`.
+  Not tested on a board yet.
+
 ## [0.6.0] - 2026-10-20
 
 Blade OS of OpenMIOP Stack v0.6.0. Same Talos v1.14.2 kernel, DTB, U-Boot

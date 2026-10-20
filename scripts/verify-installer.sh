@@ -4,6 +4,8 @@
 # extensions in its initramfs, the openmiop module and the Blade 3 DTB.
 #
 #   scripts/verify-installer.sh [OUTPUT_DIR]     (default: _out)
+#   VARIANT=generic scripts/verify-installer.sh  (plain Blade 3 image:
+#       no extensions, PCIe3 x4 as host)
 #
 # Needs: python3, zstd, unsquashfs (squashfs-tools), dtc.
 set -Eeuo pipefail
@@ -11,6 +13,7 @@ set -Eeuo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 OUT=${1:-"${ROOT}/_out"}
 KERNEL=$(awk '/^  linux_version:/{print $2}' "${ROOT}/Pkgfile")-talos
+VARIANT=${VARIANT:-clusterbox}
 OPENMIOP_VERSION=$(awk '/^  openmiop_version:/{print $2}' "${ROOT}/Pkgfile")
 WORK=$(mktemp -d)
 trap 'rm -rf "${WORK}"' EXIT
@@ -64,6 +67,7 @@ cmdline=$(cat "${WORK}/sec-cmdline")
 [[ "${cmdline}" != *module.sig_enforce=1* ]] || fail "cmdline still has module.sig_enforce=1: ${cmdline}"
 ok "cmdline without module.sig_enforce: ${cmdline}"
 
+if [[ "${VARIANT}" == clusterbox ]]; then
 # The initramfs is a chain of newc archives; keep the extension images,
 # the generated modules.dep image and extensions.yaml.
 mkdir -p "${WORK}/initrd"
@@ -124,6 +128,7 @@ grep -rqs "extras/blade3-leds.ko" "${WORK}"/initrd/*.d/usr/lib/modules/*/modules
 grep -rqs "pci:v000010ECd00008125.* blade3_leds" "${WORK}"/initrd/*.d/usr/lib/modules/*/modules.alias ||
     fail "blade3-leds has no RTL8125 alias"
 ok "blade3-leds in modules.dep and modules.alias"
+fi
 
 dtb=$(find "${WORK}/fs" -name rk3588-mixtile-blade3.dtb -print -quit)
 [[ -n "${dtb}" ]] || fail "rk3588-mixtile-blade3.dtb not in the installer"
@@ -131,13 +136,22 @@ if [[ -f "${OUT}/rk3588-mixtile-blade3.dtb" ]]; then
     cmp -s "${dtb}" "${OUT}/rk3588-mixtile-blade3.dtb" || fail "installer DTB differs from ${OUT}/rk3588-mixtile-blade3.dtb"
 fi
 dtc -q -I dtb -O dts "${dtb}" > "${WORK}/blade3.dts"
-python3 - "${WORK}/blade3.dts" <<'EOF' || fail "DTB content check"
+python3 - "${WORK}/blade3.dts" "${VARIANT}" <<'EOF' || fail "DTB content check"
 import re, sys
 dts = open(sys.argv[1]).read()
 def node(label):
     m = re.search(r"\n(\t*)" + re.escape(label) + r" \{\n(.*?)\n\1\};", dts, re.S)
     return m.group(2) if m else ""
 checks = {
+    "pcie@fe150000 (PCIe3 x4 host) okay":
+        lambda: 'status = "okay"' in node("pcie@fe150000"),
+    "pcie-ep@fe150000 not enabled":
+        lambda: not any('status = "okay"' in b for b in re.findall(r"pcie-ep@fe150000 \{(.*?)\n\t\};", dts, re.S)),
+    "no openmiop endpoint":
+        lambda: "openmiop" not in dts,
+    "PCIe SMMU iommu@fc900000 not disabled":
+        lambda: 'status = "disabled"' not in node("iommu@fc900000"),
+} if sys.argv[2] == "generic" else {
     "pcie@fe150000 (endpoint) is openmiop and okay":
         lambda: any('"openmiop,rk3588-pcie-ep"' in b and 'status = "okay"' in b
                     for b in re.findall(r"pcie-ep@fe150000 \{(.*?)\n\t\};", dts, re.S)),

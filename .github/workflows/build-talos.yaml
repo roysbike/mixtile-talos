@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - "claude/**"
+      - "feat/**"
     tags:
       - "v*"
     paths-ignore:
@@ -31,6 +32,14 @@ jobs:
     # (vmlinux + modules_prepare), which is too slow under QEMU.
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        # clusterbox: the Cluster Box image (openmiop); generic: a plain
+        # Blade 3 (generic/, the board as it would go to sbc-rockchip).
+        variant: [clusterbox, generic]
+    env:
+      VARIANT: ${{ matrix.variant }}
 
     steps:
       - name: Check out sources
@@ -63,9 +72,14 @@ jobs:
           echo "USERNAME=${owner}" >> "${GITHUB_ENV}"
           echo "IMAGE_TAG=${tag}" >> "${GITHUB_ENV}"
           # Packages this workflow creates (and may therefore write).
-          echo "OVERLAY_NAME=sbc-mixtile-blade3-ci" >> "${GITHUB_ENV}"
+          if [[ "${VARIANT}" == generic ]]; then
+            echo "OVERLAY_NAME=sbc-mixtile-blade3-generic-ci" >> "${GITHUB_ENV}"
+            echo "INSTALLER_IMAGE=ghcr.io/${owner}/mixtile-blade3-generic-installer:${tag}" >> "${GITHUB_ENV}"
+          else
+            echo "OVERLAY_NAME=sbc-mixtile-blade3-ci" >> "${GITHUB_ENV}"
+            echo "INSTALLER_IMAGE=ghcr.io/${owner}/mixtile-talos-installer:${tag}" >> "${GITHUB_ENV}"
+          fi
           echo "OPENMIOP_NAME=openmiop" >> "${GITHUB_ENV}"
-          echo "INSTALLER_IMAGE=ghcr.io/${owner}/mixtile-talos-installer:${tag}" >> "${GITHUB_ENV}"
           # Layer cache: the kernel tree stage takes most of a cold build.
           echo "BUILD_CACHE=ghcr.io/${owner}/mixtile-talos-buildcache" >> "${GITHUB_ENV}"
           # The kernel tree as a prebuilt image, rebuilt only when its inputs change.
@@ -84,7 +98,7 @@ jobs:
           (cd _out && sha256sum -c SHA256SUMS)
 
       - name: Publish the GitHub release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.variant == 'clusterbox'
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./scripts/publish-release.sh "${GITHUB_REF_NAME}" _out
@@ -92,7 +106,7 @@ jobs:
       - name: Upload boot artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: mixtile-blade3-talos-${{ env.IMAGE_TAG }}
+          name: mixtile-blade3-talos-${{ matrix.variant }}-${{ env.IMAGE_TAG }}
           path: _out/
           if-no-files-found: error
           retention-days: 14

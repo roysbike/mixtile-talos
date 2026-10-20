@@ -1,0 +1,5 @@
+name: profiles-generic
+variant: scratch
+finalize:
+  - from: /pkg/mixtile-blade3
+    to: /rootfs/profiles

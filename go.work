@@ -1,3 +1,6 @@
 go 1.26.5
 
-use ./installers/blade3/src
+use (
+	./generic/installer/src
+	./installers/blade3/src
+)

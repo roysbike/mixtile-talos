@@ -11,9 +11,19 @@ REGISTRY=${REGISTRY:-ghcr.io}
 USERNAME=${USERNAME:-}
 IMAGE_TAG=${IMAGE_TAG:-v0.3.0}
 OUTPUT_DIR=${OUTPUT_DIR:-"${ROOT}/_out"}
+# VARIANT=clusterbox (default): the Cluster Box overlay (PCIe endpoint for
+# openmiop, the openmiop extension and the cluster's extensions).
+# VARIANT=generic: a plain Blade 3 (generic/, PCIe3 x4 as host, no
+# extensions), laid out like a board in siderolabs/sbc-rockchip.
+VARIANT=${VARIANT:-clusterbox}
+case "${VARIANT}" in
+    clusterbox) OVERLAY_TARGET=sbc-mixtile-blade3; PROFILE=blade3 ;;
+    generic) OVERLAY_TARGET=sbc-mixtile-blade3-generic; PROFILE=mixtile-blade3; OPENMIOP=0 ;;
+    *) echo "VARIANT must be clusterbox or generic" >&2; exit 2 ;;
+esac
 # Package names in ${REGISTRY}/${USERNAME}. CI uses names it created
 # itself: a GITHUB_TOKEN cannot write to packages pushed from elsewhere.
-OVERLAY_NAME=${OVERLAY_NAME:-sbc-mixtile-blade3}
+OVERLAY_NAME=${OVERLAY_NAME:-${OVERLAY_TARGET}}
 OPENMIOP_NAME=${OPENMIOP_NAME:-openmiop}
 # If set, the installer image is pushed there (for talosctl upgrade).
 INSTALLER_IMAGE=${INSTALLER_IMAGE:-}
@@ -42,6 +52,7 @@ RKNN_EXTENSION=${RKNN_EXTENSION:-ghcr.io/siderolabs/rockchip-rknn:${TALOS_VERSIO
 # that already has a digest is left as it is.
 pin_extensions() {
     local digests cid ref var
+    [[ "${VARIANT}" == clusterbox ]] || return 0
     [[ "${PIN_EXTENSIONS:-1}" == 1 && -z "${EXTENSIONS_PINNED:-}" ]] || return 0
     if ! cid=$(docker create --platform linux/arm64 "ghcr.io/siderolabs/extensions:${TALOS_VERSION}" /none); then
         echo "cannot read ghcr.io/siderolabs/extensions:${TALOS_VERSION} (PIN_EXTENSIONS=0 uses the tags)" >&2
@@ -79,6 +90,7 @@ Environment:
   REGISTRY=${REGISTRY}
   IMAGE_TAG=${IMAGE_TAG}
   OUTPUT_DIR=${OUTPUT_DIR}
+  VARIANT=${VARIANT} (clusterbox or generic)
   OPENMIOP=${OPENMIOP} (OPENMIOP_VERSION=${OPENMIOP_VERSION})
 
 The overlay and the openmiop extension are pushed because the Talos
@@ -113,11 +125,17 @@ cache_args() {
 }
 
 build_overlay() {
-    make target-sbc-mixtile-blade3 \
+    # The generic DTB and U-Boot are built from one device tree.
+    if [[ "${VARIANT}" == generic ]] &&
+        ! cmp -s generic/dtb/rk3588-mixtile-blade3.dts artifacts/blade3/u-boot/rk3588-mixtile-blade3.dts; then
+        echo "generic/dtb and artifacts/blade3/u-boot have different rk3588-mixtile-blade3.dts" >&2
+        exit 1
+    fi
+    make "target-${OVERLAY_TARGET}" \
         PLATFORM=linux/arm64 \
         PKGS="${PKGS}" \
         TOOLS="${TOOLS}" \
-        CACHE_ARGS="$(cache_args sbc-mixtile-blade3)" \
+        CACHE_ARGS="$(cache_args "${OVERLAY_TARGET}")" \
         TARGET_ARGS="--tag=${REGISTRY}/${USERNAME}/${OVERLAY_NAME}:${IMAGE_TAG} --push"
 }
 
@@ -201,12 +219,18 @@ build_images() {
         --base-installer-image "ghcr.io/siderolabs/installer-base:${TALOS_VERSION}"
         --overlay-name mixtile-blade3
         --overlay-image "${REGISTRY}/${USERNAME}/${OVERLAY_NAME}:${IMAGE_TAG}"
-        --system-extension-image "${DRBD_EXTENSION}"
-        --system-extension-image "${ZFS_EXTENSION}"
-        --system-extension-image "${ISCSI_EXTENSION}"
-        --system-extension-image "${PANFROST_EXTENSION}"
-        --system-extension-image "${RKNN_EXTENSION}"
     )
+
+    # The generic image is plain Talos: extensions are the user's choice.
+    if [[ "${VARIANT}" == clusterbox ]]; then
+        common_args+=(
+            --system-extension-image "${DRBD_EXTENSION}"
+            --system-extension-image "${ZFS_EXTENSION}"
+            --system-extension-image "${ISCSI_EXTENSION}"
+            --system-extension-image "${PANFROST_EXTENSION}"
+            --system-extension-image "${RKNN_EXTENSION}"
+        )
+    fi
 
     if [[ "${OPENMIOP}" == 1 ]]; then
         common_args+=(
@@ -215,7 +239,7 @@ build_images() {
         )
     fi
 
-    for kind in installer blade3; do
+    for kind in installer "${PROFILE}"; do
         docker run "${docker_args[@]}" \
             "ghcr.io/siderolabs/imager:${TALOS_VERSION}" \
             "${kind}" "${common_args[@]}"
@@ -267,7 +291,7 @@ export_artifacts() {
     local tmp
     tmp=$(mktemp -d)
 
-    make target-sbc-mixtile-blade3 PLATFORM=linux/arm64 PKGS="${PKGS}" TOOLS="${TOOLS}" \
+    make "target-${OVERLAY_TARGET}" PLATFORM=linux/arm64 PKGS="${PKGS}" TOOLS="${TOOLS}" \
         TARGET_ARGS="--output type=local,dest=${tmp}/overlay"
     cp "${tmp}/overlay/artifacts/arm64/dtb/rockchip/rk3588-mixtile-blade3.dtb" "${out}/"
     cp "${tmp}/overlay/artifacts/arm64/u-boot/mixtile-blade3/u-boot-rockchip.bin" "${out}/"
@@ -287,6 +311,7 @@ export_artifacts() {
     {
         echo "commit: $(git -C "${ROOT}" rev-parse HEAD)"
         echo "commit-dirty: $(git -C "${ROOT}" status --porcelain | grep -q . && echo yes || echo no)"
+        echo "variant: ${VARIANT}"
         echo "talos: ${TALOS_VERSION}"
         echo "pkgs: ${PKGS}"
         echo "tools: ${TOOLS}"
@@ -296,7 +321,11 @@ export_artifacts() {
         echo "overlay: ${overlay}@$(digest "${overlay}")"
         [[ "${OPENMIOP}" == 1 ]] && echo "openmiop-extension: ${extension}@$(digest "${extension}")"
         [[ -f "${out}/installer-image.txt" ]] && echo "installer: $(cat "${out}/installer-image.txt")"
-        echo "extensions: ${DRBD_EXTENSION} ${ZFS_EXTENSION} ${ISCSI_EXTENSION} ${PANFROST_EXTENSION} ${RKNN_EXTENSION}"
+        if [[ "${VARIANT}" == clusterbox ]]; then
+            echo "extensions: ${DRBD_EXTENSION} ${ZFS_EXTENSION} ${ISCSI_EXTENSION} ${PANFROST_EXTENSION} ${RKNN_EXTENSION}"
+        else
+            echo "extensions: none"
+        fi
     } > "${out}/BUILD-INFO.txt"
     if [[ "${OPENMIOP}" == 1 ]]; then
         echo "openmiop-ko-vermagic: $(strings "${out}/openmiop-ep.ko" | sed -n 's/^vermagic=//p')" >> "${out}/BUILD-INFO.txt"
@@ -328,7 +357,7 @@ main() {
         overlay) build_overlay ;;
         extension) kernel_tree_image; build_extension ;;
         image) build_images ;;
-        artifacts) kernel_tree_image; export_artifacts ;;
+        artifacts) [[ "${OPENMIOP}" == 1 ]] && kernel_tree_image; export_artifacts ;;
         all)
             build_overlay
             [[ "${OPENMIOP}" == 1 ]] && { kernel_tree_image; build_extension; }
