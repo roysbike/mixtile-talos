@@ -1,6 +1,6 @@
-# The kernel tree of Talos v1.14.2 (6.18.54-talos), prepared for building
+# The kernel tree of Talos v1.14.4 (6.18.57-talos), prepared for building
 # out-of-tree modules. Mirrors siderolabs/pkgs kernel/prepare + kernel/build
-# at commit 6c312e4 (PKGS v1.14.0-37-g6c312e4): same sources, patches,
+# at commit 2ec10eb (PKGS v1.14.0-44-g2ec10eb): same sources, patches,
 # config and LLVM toolchain image. Only vmlinux and modules_prepare are
 # built; that is enough for Module.symvers (symbol CRCs) and module BTF.
 #
@@ -45,7 +45,7 @@ steps:
     test:
       - |
         cd /src
-        test "$(cat include/config/kernel.release)" = "6.18.54-talos"
+        test "$(cat include/config/kernel.release)" = "{{ .linux_version }}-talos"
         # The config must be the one Talos ships, unchanged by olddefconfig
         # (apart from the compiler version text).
         diff <(grep -v CONFIG_CC_VERSION_TEXT .config) <(grep -v CONFIG_CC_VERSION_TEXT /pkg/config-arm64)

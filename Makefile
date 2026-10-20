@@ -4,9 +4,9 @@ ARTIFACTS ?= _out
 PLATFORM ?= linux/arm64
 PROGRESS ?= auto
 PKGS_PREFIX ?= ghcr.io/siderolabs
-PKGS ?= v1.14.0-37-g6c312e4
+PKGS ?= v1.14.0-44-g2ec10eb
 TOOLS_PREFIX ?= ghcr.io/siderolabs
-TOOLS ?= v1.14.0-8-g9776960
+TOOLS ?= v1.14.0-9-g6b71647
 SOURCE_DATE_EPOCH ?= $(shell git log -1 --pretty=%ct)
 
 BUILD_ARGS = --file=Pkgfile

@@ -18,16 +18,16 @@ vars:
   rkbin_sha256: b565faeab846950262c07e6debbd6519ea9e7f34943dbb305b9cea6b1026e11a
   rkbin_sha512: 15245ca51b010edeae933b53a9aa9398552f2bdd65879d2bbbc147417999947e1d71aa29123302c7486976886ebf59867123abdcc2d77be6f566a96c242a5ca2
 
-  # Must match the kernel packaged by Talos v1.14.2 (PKGS v1.14.0-37-g6c312e4).
-  linux_version: 6.18.54
-  linux_sha256: 9df30b02dd8102bbd0be52556288ef6889ddbe7f1ddb96fbf847d0becf3eacac
-  linux_sha512: 37b4d8f6334345b769d2eccfb9a93e9d401b89ec582215d6a7035c94045ffc926fd332760d29e126285869c0b36c7d7c65a75c380d06ceb46bc15913a36009e3
+  # Must match the kernel packaged by Talos v1.14.4 (PKGS v1.14.0-44-g2ec10eb).
+  linux_version: 6.18.57
+  linux_sha256: 5bd9acdc82ec5efc3790ae840e5aaa40dfde7efff261cf6dde902dc570acf98c
+  linux_sha512: 6d9b39bee05daf05849c0bacc7bd407b13f34882bd06f46dc8c69835e98aba762d41f81852b5af34728c5cf15832fecb047c01d182bf3b581e82921885653689
 
   # openmiop (pcie-ep-net) driver for the Cluster Box PCIe fabric.
-  openmiop_version: 0.6.0-v1.14.2
-  openmiop_ref: 9cdd03f1df5e4fdacffe2491320703c8e3894dd9
-  openmiop_sha256: 3fc5ee63e3bf81b70bc03a9995fdf5ca6f6ad532ceb115dab5ee35f40d1a470a
-  openmiop_sha512: 3e501925a178974baf69d4a4f6059c1b36127cba2fefaf4bf73afe871e9a857304bb156cdeb06189976528eefd37e5e1e7561992f8fd187f3b70db544dfea544
+  openmiop_version: 0.6.1-v1.14.4
+  openmiop_ref: a368e65e4077be4ae40a039ac60aad3b0db66d6a
+  openmiop_sha256: fa11639a7c5da1b3d38509b13e1267c54acfc58ee4729527c5f24773e8afbf40
+  openmiop_sha512: 51f610ed032d515523b6264536da3aa6cae00dc7c2b06ba29b29c475c180a94b29b3879bc2d3d2f56a484a2c74b7e5beae3a6c6c96e28cf03847ac483d882976
 
 labels:
   org.opencontainers.image.source: https://github.com/mixtile-rockchip/mixtile-talos

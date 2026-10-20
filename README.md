@@ -2,7 +2,7 @@
 
 [English](README.md) · [Русский](README.ru.md)
 
-This repository builds a Talos Linux `v1.14.2` ARM64 SBC overlay and bootable
+This repository builds a Talos Linux `v1.14.4` ARM64 SBC overlay and bootable
 images for the Mixtile Blade 3 (RK3588), including blades installed in a
 Mixtile Cluster Box.
 
@@ -149,7 +149,7 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:6c62d7a4fb7886c3bf31f25bc16b005d
 
    ```sh
    talosctl -n <node> read /proc/cmdline       # no module.sig_enforce
-   talosctl -n <node> get extensions           # openmiop 0.3.0-v1.14.2
+   talosctl -n <node> get extensions           # openmiop 0.6.1-v1.14.4
    talosctl -n <node> dmesg | grep openmiop    # link up, node N, peer M up
    talosctl -n <node> get links | grep omi0    # alias omi0 on enx<mac>, up
    ping -c3 -M do -s 8972 10.20.0.<node>       # from another fabric member
@@ -165,9 +165,9 @@ and [CHANGELOG.md](CHANGELOG.md).
 
 ## Source baseline
 
-- Talos and imager: `v1.14.2`
-- Talos packages: `v1.14.0-37-g6c312e4`
-- Linux: `6.18.54-talos`, the Talos ARM64 kernel configuration (rebuilt at the
+- Talos and imager: `v1.14.4`
+- Talos packages: `v1.14.0-44-g2ec10eb`
+- Linux: `6.18.57-talos`, the Talos ARM64 kernel configuration (rebuilt at the
   same PKGS commit so the openmiop module matches its ABI)
 - U-Boot: `v2026.07`
 - Board DTS and U-Boot configuration: Armbian mainline Blade 3 port
@@ -188,15 +188,15 @@ offset; it does not treat the Turing RK1 DTB as interchangeable with Blade 3.
 - the Talos 1.14 overlay installer;
 - the raw-image profile.
 
-The final images use the Talos v1.14.2 kernel (6.18.54-talos) and include:
+The final images use the Talos v1.14.4 kernel (6.18.57-talos) and include:
 
-- `ghcr.io/siderolabs/drbd:9.3.4-v1.14.2`
-- `ghcr.io/siderolabs/zfs:2.4.4-v1.14.2`
+- `ghcr.io/siderolabs/drbd:9.3.4-v1.14.4`
+- `ghcr.io/siderolabs/zfs:2.4.4-v1.14.4`
 - `ghcr.io/siderolabs/iscsi-tools:v0.2.0`
-- `ghcr.io/siderolabs/panfrost:20260916-v1.14.2`
-- `ghcr.io/siderolabs/rockchip-rknn:v1.14.2`
-- openmiop `0.3.0-v1.14.2` (built by this repository)
-- `blade3-nvme-recover` and `blade3-leds` modules in the openmiop extension (NVMe back after a Cluster Box PERST#, port LEDs)
+- `ghcr.io/siderolabs/panfrost:20260916-v1.14.4`
+- `ghcr.io/siderolabs/rockchip-rknn:v1.14.4`
+- openmiop `0.6.1-v1.14.4` (built by this repository)
+- `blade3-nvme-recover` and `blade3-leds` modules in the openmiop extension, built from the same pcie-ep-net release (`drivers/blade3`) (NVMe back after a Cluster Box PERST#, port LEDs)
 
 DRBD and ZFS therefore match the running official Talos kernel release,
 module ABI and signing key.
@@ -259,7 +259,7 @@ Run:
 ./scripts/verify-kernel-config.sh
 ```
 
-The audit checks the exact `config-arm64` from the Talos 1.14.2 package
+The audit checks the exact `config-arm64` from the Talos 1.14.4 package
 commit and verifies that modular storage, NVMe, VFIO and Realtek drivers are
 listed in the Talos ARM64 initramfs manifest.
 

@@ -40,7 +40,6 @@ func (i *blade3Installer) GetOptions(_ context.Context, _ blade3ExtraOptions) (o
 	kernelArgs := []string{
 		"cma=128MB",
 		"console=tty0",
-		"console=ttyFIQ0,1500000n8",
 		"console=ttyS2,1500000n8",
 		"sysctl.kernel.kexec_load_disabled=1",
 		"talos.dashboard.disabled=1",
