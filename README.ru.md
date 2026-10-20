@@ -12,7 +12,7 @@
 > (zero-copy, с прошивкой ClusterBox v0.3.0). Установка, обновление по digest, проверка и ограничения — в
 > [README.md](README.md#openmiop-stack-v060), [CHANGELOG.md](CHANGELOG.md)
 > и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.0). Установщик:
-> `ghcr.io/roysbike/mixtile-talos-installer:v0.6.0` (digest — на странице релиза).
+> `ghcr.io/roysbike/mixtile-talos-installer@sha256:6c62d7a4fb7886c3bf31f25bc16b005d1798eec9f227d5c09e16370bc0d135bf`.
 >
 > Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
 > `--image` и с тем же образом в `machine.install.image`.
