@@ -33,14 +33,14 @@ single Blade 3) and want:
 
 | You want | Repository |
 | --- | --- |
-| Ethernet between the blades over the PCIe switch (`omi0`, ~5 Gbit/s per flow, ~25 Gbit/s with four senders) | [pcie-ep-net](https://github.com/roysbike/pcie-ep-net) |
+| Ethernet between the blades over the PCIe switch (`omi0`, 7-8 Gbit/s per flow, ~25 Gbit/s with four senders) | [pcie-ep-net](https://github.com/roysbike/pcie-ep-net) |
 | Talos Linux (Kubernetes) on Blade 3, in a Cluster Box or on its own | [mixtile-talos](https://github.com/roysbike/mixtile-talos) (this repository) |
 | Current OpenWrt on the BMC: blade power and consoles, firmware updates, the BMC side of OpenMIOP | [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) |
 
-## OpenMIOP Stack v0.5.0
+## OpenMIOP Stack v0.6.0
 
-This repository's release **v0.5.0** is the Blade OS of the OpenMIOP
-Stack v0.5.0: Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
+This repository's release **v0.6.0** is the Blade OS of the OpenMIOP
+Stack v0.6.0: Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
 Mixtile Cluster Box over its PCIe switch, built into the installer image.
 
 ```
@@ -54,30 +54,31 @@ Mixtile Cluster Box over its PCIe switch, built into the installer image.
                                               Talos + openmiop, omi0 10.20.0.x
 ```
 
-| OpenMIOP Stack v0.5.0 | |
+| OpenMIOP Stack v0.6.0 | |
 | --- | --- |
-| Protocol | OpenMIOP v4 framing + per-connection features (RX doorbell, multiqueue), push mode, gateway pull and zero-copy to the BMC |
-| Blade driver, BMC module | [pcie-ep-net v0.5.0](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.5.0) |
-| Blade OS | [mixtile-talos v0.5.0](https://github.com/roysbike/mixtile-talos/releases/tag/v0.5.0) (this repository) |
+| Protocol | OpenMIOP v4 framing + per-connection features (RX doorbell, multiqueue, checksum offload), push mode, gateway pull and zero-copy to the BMC |
+| Blade driver, BMC module | [pcie-ep-net v0.6.0](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.6.0) |
+| Blade OS | [mixtile-talos v0.6.0](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.0) (this repository) |
 | ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.3.0](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.3.0) (`omi-rc` with gateway pull and zero-copy; v0.2.0 works without zero-copy, v0.1.x without gateway pull) |
 
-Gateway pull with zero-copy makes LAN and internet traffic to the blades
-about three times as fast as in v0.3 (LAN -> blade through the BMC
-92 -> 275-281 Mbit/s; v0.4.0: 193-198). Previous: OpenMIOP Stack v0.4.0
-(mixtile-talos v0.4.0), v0.3.1 (mixtile-talos v0.3.0).
+v0.6.0 runs the openmiop TX threads on the Cortex-A76 and leaves TCP/UDP
+checksums between blades to the receiver: one blade-to-blade flow
+7.8-8.0 Gbit/s (5.0-5.5 in v0.5.0). Gateway pull with zero-copy (since
+v0.5.0) keeps LAN -> blade through the BMC at ~275 Mbit/s. Previous:
+OpenMIOP Stack v0.5.0 (mixtile-talos v0.5.0), v0.4.0, v0.3.1.
 
-The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.5.0)
+The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.0)
 lists the installer image digest, the disk image, DTB, U-Boot, module and
 checksums. What changed: [CHANGELOG.md](CHANGELOG.md). Details of the
 openmiop integration: [docs/openmiop.md](docs/openmiop.md).
 
 ### Install or upgrade a Blade 3 node
 
-Installer for v0.5.0 (immutable digest; the tag
-`ghcr.io/roysbike/mixtile-talos-installer:v0.5.0` resolves to it):
+Installer for v0.6.0 (pin the immutable digest from the
+[release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.0); the tag resolves to it):
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer@sha256:483ced5412fd0d15ebbe467f6faf10dc96ea027188b7ca50e4b026179a66697a
+ghcr.io/roysbike/mixtile-talos-installer:v0.6.0
 ```
 
 1. Add the openmiop documents to the machine configuration (one address
@@ -113,7 +114,7 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:483ced5412fd0d15ebbe467f6faf10dc
    the databases are healthy again before the next node):
 
    ```sh
-   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:483ced5412fd0d15ebbe467f6faf10dc96ea027188b7ca50e4b026179a66697a --stage
+   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.6.0 --stage
    ```
 
    Keep the default drain. A roll with `--drain=false` left DRBD replicas
@@ -153,8 +154,8 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:483ced5412fd0d15ebbe467f6faf10dc
 
 Rollback: `talosctl -n <node> rollback`.
 
-Known limitations: one flow uses one queue (~4.7 Gbit/s per flow), no
-checksum offload, the BMC gateway is management-grade, a BMC reboot
+Known limitations: one flow uses one queue (7-8 Gbit/s per flow), no
+TSO/GSO, the BMC gateway is management-grade, a BMC reboot
 resets every blade link (blades reconnect after ~12 s and recover the
 NVMe); see [pcie-ep-net](https://github.com/roysbike/pcie-ep-net#known-limitations)
 and [CHANGELOG.md](CHANGELOG.md).

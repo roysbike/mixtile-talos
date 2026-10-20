@@ -34,6 +34,34 @@ ISCSI_EXTENSION=${ISCSI_EXTENSION:-ghcr.io/siderolabs/iscsi-tools:v0.2.0}
 PANFROST_EXTENSION=${PANFROST_EXTENSION:-ghcr.io/siderolabs/panfrost:20260916-${TALOS_VERSION}}
 RKNN_EXTENSION=${RKNN_EXTENSION:-ghcr.io/siderolabs/rockchip-rknn:${TALOS_VERSION}}
 
+# Extension tags are not immutable: in October 2026 Sidero pushed drbd and
+# zfs "-v1.14.2" built for kernel 6.18.56 under the same tags, and the
+# imager stopped with "copying kernel modules ... 6.18.54-talos: no such
+# file". Pin every tag to the digest Talos released it with, from
+# image-digests in ghcr.io/siderolabs/extensions:${TALOS_VERSION}. A ref
+# that already has a digest is left as it is.
+pin_extensions() {
+    local digests cid ref var
+    [[ "${PIN_EXTENSIONS:-1}" == 1 && -z "${EXTENSIONS_PINNED:-}" ]] || return 0
+    if ! cid=$(docker create --platform linux/arm64 "ghcr.io/siderolabs/extensions:${TALOS_VERSION}" /none); then
+        echo "cannot read ghcr.io/siderolabs/extensions:${TALOS_VERSION} (PIN_EXTENSIONS=0 uses the tags)" >&2
+        exit 1
+    fi
+    digests=$(docker export "${cid}" | tar -xO image-digests)
+    docker rm "${cid}" >/dev/null
+    for var in DRBD_EXTENSION ZFS_EXTENSION ISCSI_EXTENSION PANFROST_EXTENSION RKNN_EXTENSION; do
+        ref=${!var}
+        case "${ref}" in *@sha256:*) continue ;; esac
+        ref=$(printf '%s\n' "${digests}" | grep -F "${ref}@sha256:" | head -n 1)
+        if [[ -z "${ref}" ]]; then
+            echo "${!var} is not in the Talos ${TALOS_VERSION} extension list" >&2
+            exit 1
+        fi
+        printf -v "${var}" '%s' "${ref}"
+    done
+    EXTENSIONS_PINNED=1
+}
+
 # openmiop: Ethernet over the Cluster Box PCIe fabric (pcie-ep-net). The
 # version must match openmiop_version in Pkgfile. Set OPENMIOP=0 to build
 # an image without it.
@@ -132,6 +160,7 @@ build_extension() {
 }
 
 build_images() {
+    pin_extensions
     mkdir -p "${OUTPUT_DIR}"
 
     local docker_args=(
@@ -233,6 +262,7 @@ build_images() {
 # digests) and SHA256SUMS. The targets are already built: buildx reuses the
 # cache and only exports them.
 export_artifacts() {
+    pin_extensions
     local out=${OUTPUT_DIR}
     local tmp
     tmp=$(mktemp -d)
