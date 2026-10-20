@@ -50,6 +50,9 @@ Blade 3), которым нужно:
 | Talos Linux (Kubernetes) на Blade 3, в Cluster Box или отдельно | [mixtile-talos](https://github.com/roysbike/mixtile-talos) (этот репозиторий) |
 | Свежий OpenWrt на BMC: питание и консоли блейдов, обновление прошивки, сторона OpenMIOP на BMC | [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) |
 
+План сделать из этого официальный образ Talos (overlay в siderolabs/sbc-rockchip,
+openmiop как подписанный extension): [docs/upstream.ru.md](docs/upstream.ru.md).
+
 ## Базовые версии
 
 - Talos и imager: `v1.14.2`

@@ -37,6 +37,9 @@ single Blade 3) and want:
 | Talos Linux (Kubernetes) on Blade 3, in a Cluster Box or on its own | [mixtile-talos](https://github.com/roysbike/mixtile-talos) (this repository) |
 | Current OpenWrt on the BMC: blade power and consoles, firmware updates, the BMC side of OpenMIOP | [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) |
 
+Plan to make this an official Talos image (overlay in siderolabs/sbc-rockchip,
+openmiop as a signed extension): [docs/upstream.md](docs/upstream.md).
+
 ## OpenMIOP Stack v0.6.0
 
 This repository's release **v0.6.0** is the Blade OS of the OpenMIOP
