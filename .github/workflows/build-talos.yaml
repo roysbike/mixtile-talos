@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - "claude/**"
+      - "feat/**"
     tags:
       - "v*"
     paths-ignore:
