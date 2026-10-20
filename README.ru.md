@@ -2,15 +2,17 @@
 
 [English](README.md) · [Русский](README.ru.md)
 
-> **Релиз v0.5.0 (OpenMIOP Stack v0.5.0, протокол v4, push-режим, gateway pull, zero-copy):**
+> **Релиз v0.6.0 (OpenMIOP Stack v0.6.0, протокол v4, push-режим, gateway pull, zero-copy, контрольные суммы между блейдами):**
 > образ Talos со встроенным openmiop (Ethernet `omi0` между блейдами
 > Cluster Box по PCIe) и восстановлением NVMe Blade 3 после перезагрузки
-> Cluster Box. Трафик из LAN и интернета к блейдам примерно в 3 раза
-> быстрее, чем в v0.3 (и на ~40 % быстрее v0.4.0), с прошивкой ClusterBox
-> v0.3.0: блейд забирает кадры прямо из буферов BMC (zero-copy). Установка, обновление по digest, проверка и ограничения — в
-> [README.md](README.md#openmiop-stack-v050), [CHANGELOG.md](CHANGELOG.md)
-> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.5.0). Установщик:
-> `ghcr.io/roysbike/mixtile-talos-installer@sha256:483ced5412fd0d15ebbe467f6faf10dc96ea027188b7ca50e4b026179a66697a`.
+> Cluster Box. Один поток между блейдами — 7,8-8,0 Гбит/с (в v0.5.0
+> 5,0-5,5): потоки отправки openmiop работают на ядрах Cortex-A76, а
+> контрольные суммы TCP/UDP между блейдами считает только получатель.
+> Трафик из LAN к блейдам идёт через буферы BMC без копирования
+> (zero-copy, с прошивкой ClusterBox v0.3.0). Установка, обновление по digest, проверка и ограничения — в
+> [README.md](README.md#openmiop-stack-v060), [CHANGELOG.md](CHANGELOG.md)
+> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.0). Установщик:
+> `ghcr.io/roysbike/mixtile-talos-installer:v0.6.0` (digest — на странице релиза).
 >
 > Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
 > `--image` и с тем же образом в `machine.install.image`.

@@ -5,6 +5,34 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-20
+
+Blade OS of OpenMIOP Stack v0.6.0. Same Talos v1.14.2 kernel, DTB, U-Boot
+and extensions as 0.5.0; openmiop changes.
+
+### Added
+
+- openmiop 0.6.0-v1.14.2 from roysbike/pcie-ep-net `9cdd03f` (tag v0.6.0):
+  TX threads and eDMA interrupts on the Cortex-A76 (`tx_cpus`), and TCP/UDP
+  checksum offload between blades (`OMI_FEAT_CSUM`, `p2p_csum`), negotiated
+  per pair. One blade-to-blade TCP flow 7.8-8.0 Gbit/s (5.0-5.5 with 0.5.0).
+
+### Fixed
+
+- `build.sh` pins the Sidero extensions (drbd, zfs, iscsi-tools, panfrost,
+  rockchip-rknn) to the digests of `ghcr.io/siderolabs/extensions:v1.14.2`.
+  Sidero re-pushed `drbd`/`zfs:...-v1.14.2` built for kernel 6.18.56 under
+  the same tags, and the imager failed ("copying kernel modules ...
+  6.18.54-talos: no such file"). `PIN_EXTENSIONS=0` keeps the tags.
+
+### Tested
+
+- The same driver without the last tx_build hardening (test image ci-61,
+  openmiop 0.5.3-dev.1) on .108 and .201, v0.5.0 on .133/.204: 1 flow
+  7.82-7.98 Gbit/s between the test pair, integrity over TCP/UDP,
+  IPv4/IPv6, Kube-OVN Geneve and the BMC gateway identical, 1 h soak
+  clean. Upgrade with drain, DRBD and CNPG fine.
+
 ## [0.5.0] - 2026-10-14
 
 Blade OS of OpenMIOP Stack v0.5.0. Same Talos v1.14.2 kernel, DTB, U-Boot
