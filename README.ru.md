@@ -2,17 +2,17 @@
 
 [English](README.md) · [Русский](README.ru.md)
 
-> **Релиз v0.6.0 (OpenMIOP Stack v0.6.0, протокол v4, push-режим, gateway pull, zero-copy, контрольные суммы между блейдами):**
+> **Релиз v0.6.1 (OpenMIOP Stack v0.6.1, Talos v1.14.4, протокол v4, push-режим, gateway pull, zero-copy, контрольные суммы между блейдами):**
 > образ Talos со встроенным openmiop (Ethernet `omi0` между блейдами
 > Cluster Box по PCIe) и восстановлением NVMe Blade 3 после перезагрузки
-> Cluster Box. Один поток между блейдами — 7,8-8,0 Гбит/с (в v0.5.0
-> 5,0-5,5): потоки отправки openmiop работают на ядрах Cortex-A76, а
-> контрольные суммы TCP/UDP между блейдами считает только получатель.
-> Трафик из LAN к блейдам идёт через буферы BMC без копирования
-> (zero-copy, с прошивкой ClusterBox v0.3.0). Установка, обновление по digest, проверка и ограничения — в
-> [README.md](README.md#openmiop-stack-v060), [CHANGELOG.md](CHANGELOG.md)
-> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.0). Установщик:
-> `ghcr.io/roysbike/mixtile-talos-installer@sha256:6c62d7a4fb7886c3bf31f25bc16b005d1798eec9f227d5c09e16370bc0d135bf`.
+> Cluster Box. Новое по сравнению с v0.6.0: Talos v1.14.4 (Linux 6.18.57),
+> openmiop и модули платы Blade 3 собираются из одного релиза
+> pcie-ep-net v0.6.1 так, как Talos собирает внешние модули. Сам драйвер
+> и скорость те же, что в v0.6.0: один поток между блейдами 7,8-8,0
+> Гбит/с. Установка, обновление по digest, проверка и ограничения — в
+> [README.md](README.md#openmiop-stack-v061), [CHANGELOG.md](CHANGELOG.md)
+> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.1). Установщик:
+> `ghcr.io/roysbike/mixtile-talos-installer:v0.6.1` (digest — на странице релиза).
 >
 > Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
 > `--image` и с тем же образом в `machine.install.image`.
@@ -265,6 +265,7 @@ PD происходит до старта Linux. На первом запуск�
 исправное питание. Не затирайте рабочий носитель, пока не увидите PCIe, NVMe
 и Ethernet.
 
-Поддержка endpoint MIOP / Cluster Box в этот образ намеренно не входит.
-Пока драйвер не перенесён на `6.18.54-talos`, узлы общаются по обычному
-Ethernet.
+Поддержку endpoint Cluster Box даёт открытый драйвер `openmiop`
+(<https://github.com/roysbike/pcie-ep-net>). Здесь он упакован как system
+extension вместе с нужными ему изменениями device tree; подробности — в
+[docs/openmiop.md](docs/openmiop.md).
