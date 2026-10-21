@@ -40,10 +40,10 @@ single Blade 3) and want:
 Plan to make this an official Talos image (overlay in siderolabs/sbc-rockchip,
 openmiop as a signed extension): [docs/upstream.md](docs/upstream.md).
 
-## OpenMIOP Stack v0.6.0
+## OpenMIOP Stack v0.6.1
 
-This repository's release **v0.6.0** is the Blade OS of the OpenMIOP
-Stack v0.6.0: Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
+This repository's release **v0.6.1** is the Blade OS of the OpenMIOP
+Stack v0.6.1: Talos with **openmiop**, Ethernet (`omi0`) between the blades of a
 Mixtile Cluster Box over its PCIe switch, built into the installer image.
 
 ```
@@ -57,31 +57,32 @@ Mixtile Cluster Box over its PCIe switch, built into the installer image.
                                               Talos + openmiop, omi0 10.20.0.x
 ```
 
-| OpenMIOP Stack v0.6.0 | |
+| OpenMIOP Stack v0.6.1 | |
 | --- | --- |
 | Protocol | OpenMIOP v4 framing + per-connection features (RX doorbell, multiqueue, checksum offload), push mode, gateway pull and zero-copy to the BMC |
-| Blade driver, BMC module | [pcie-ep-net v0.6.0](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.6.0) |
-| Blade OS | [mixtile-talos v0.6.0](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.0) (this repository) |
-| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.3.0](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.3.0) (`omi-rc` with gateway pull and zero-copy; v0.2.0 works without zero-copy, v0.1.x without gateway pull) |
+| Blade driver, BMC module | [pcie-ep-net v0.6.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.6.1) (driver as v0.6.0, plus the Blade 3 board modules) |
+| Blade OS | [mixtile-talos v0.6.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.1) (this repository) |
+| ClusterBox BMC | [mixtile-clusterbox-mt7620a-openwrt v0.4.0](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.0) (OpenWrt 25.12; v0.3.0 works the same, v0.2.0 without zero-copy, v0.1.x without gateway pull) |
 
-v0.6.0 runs the openmiop TX threads on the Cortex-A76 and leaves TCP/UDP
-checksums between blades to the receiver: one blade-to-blade flow
-7.8-8.0 Gbit/s (5.0-5.5 in v0.5.0). Gateway pull with zero-copy (since
-v0.5.0) keeps LAN -> blade through the BMC at ~275 Mbit/s. Previous:
-OpenMIOP Stack v0.5.0 (mixtile-talos v0.5.0), v0.4.0, v0.3.1.
+v0.6.1 moves to Talos v1.14.4 (Linux 6.18.57) and builds openmiop and the
+Blade 3 board modules from one pcie-ep-net release, the way Talos builds
+out-of-tree modules; the driver and its speed are those of v0.6.0 (one
+blade-to-blade flow 7.8-8.0 Gbit/s, LAN -> blade through the BMC
+~275 Mbit/s). Previous: OpenMIOP Stack v0.6.0 (mixtile-talos v0.6.0),
+v0.5.0, v0.4.0, v0.3.1.
 
-The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.0)
+The [release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.1)
 lists the installer image digest, the disk image, DTB, U-Boot, module and
 checksums. What changed: [CHANGELOG.md](CHANGELOG.md). Details of the
 openmiop integration: [docs/openmiop.md](docs/openmiop.md).
 
 ### Install or upgrade a Blade 3 node
 
-Installer for v0.6.0 (immutable digest; the tag
-`ghcr.io/roysbike/mixtile-talos-installer:v0.6.0` resolves to it):
+Installer for v0.6.1 (pin the immutable digest from the
+[release page](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.1); the tag resolves to it):
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer@sha256:6c62d7a4fb7886c3bf31f25bc16b005d1798eec9f227d5c09e16370bc0d135bf
+ghcr.io/roysbike/mixtile-talos-installer:v0.6.1
 ```
 
 1. Add the openmiop documents to the machine configuration (one address
@@ -117,7 +118,7 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:6c62d7a4fb7886c3bf31f25bc16b005d
    the databases are healthy again before the next node):
 
    ```sh
-   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:6c62d7a4fb7886c3bf31f25bc16b005d1798eec9f227d5c09e16370bc0d135bf --stage
+   talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.6.1 --stage
    ```
 
    Keep the default drain. A roll with `--drain=false` left DRBD replicas
@@ -131,7 +132,7 @@ ghcr.io/roysbike/mixtile-talos-installer@sha256:6c62d7a4fb7886c3bf31f25bc16b005d
    `machine.install.image` this booted a kernel that rejected the
    openmiop module (no `omi0`).
 
-   New nodes: write `openmiop-0.3.0-blade3-talos-1.14.2-arm64.raw.xz` **from this release** (see
+   New nodes: write `openmiop-0.6.1-blade3-talos-1.14.4-arm64.raw.xz` **from this release** (see
    [Install from macOS](#install-from-macos)); check that the console
    shows `enabling system extension openmiop`. Then apply the machine
    configuration with `machine.install.image` set to the same reference

@@ -5,6 +5,12 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-21
+
+Blade OS of OpenMIOP Stack v0.6.1: Talos v1.14.4, and openmiop with the
+Blade 3 board modules from one pcie-ep-net release. Same DTB and U-Boot as
+0.6.0; the openmiop driver is unchanged.
+
 ### Changed
 
 - Talos v1.14.4 (PKGS v1.14.0-44-g2ec10eb, TOOLS v1.14.0-9-g6b71647):
@@ -21,6 +27,15 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `module.sig_enforce`).
 - Kernel arguments: `console=ttyFIQ0` removed (only vendor kernels have
   it), as on the sbc-rockchip boards.
+
+### Tested
+
+- The PR build (installer `sha256:24a6f518…`) rolled with drain on the lab
+  Cluster Box: .108 on 2026-10-20, .204/.133/.201 on 2026-10-21 (CNPG
+  primaries moved off by cordon first). `scripts/openmiop-verify.sh` ok on
+  .108; on every node openmiop 0.6.1 loaded, peers up with checksum
+  offload, NVMe Gen3 x2; etcd 3/3, CNPG healthy, ZFS clean, DRBD in sync
+  afterwards. BMC on firmware v0.4.0.
 
 ## [0.6.0] - 2026-10-20
 
