@@ -6,6 +6,7 @@
 # Read-only: uses talosctl get/read/dmesg only.
 set -u
 N=${1:?usage: $0 <node-ip>}
+KREL=$(awk '/^  linux_version:/{print $2}' "$(dirname "$0")/../Pkgfile")-talos
 t() { talosctl -n "$N" "$@" 2>&1; }
 ok=0
 check() { # label, condition-result
@@ -17,7 +18,7 @@ t version --short | sed 's/^/  /' | grep -E "Tag|SHA" | head -2
 cmdline=$(t read /proc/cmdline)
 echo "  cmdline: $cmdline"
 echo "$cmdline" | grep -q "module.sig_enforce" ; check "module.sig_enforce absent" $((1 - $?))
-t read /proc/version | grep -q "6.18.54-talos"; check "kernel 6.18.54-talos" $?
+t read /proc/version | grep -q "$KREL"; check "kernel $KREL" $?
 
 ext=$(t get extensions)
 for e in openmiop drbd zfs iscsi-tools panfrost rockchip-rknn; do
@@ -26,6 +27,8 @@ done
 
 mods=$(t read /proc/modules)
 echo "$mods" | grep -q "^openmiop_ep "; check "openmiop_ep loaded" $?
+echo "$mods" | grep -q "^blade3_leds "; check "blade3_leds loaded" $?
+echo "$mods" | grep -q "^blade3_nvme_recover "; check "blade3_nvme_recover loaded" $?
 dmesg=$(t dmesg)
 echo "$dmesg" | grep -E "openmiop-ep" | grep -E "phy mode|link up|node index|peer . up|omi0 mac" | tail -6 | sed 's/^/    /'
 echo "$dmesg" | grep -q "openmiop-ep.*link up"; check "endpoint link up" $?

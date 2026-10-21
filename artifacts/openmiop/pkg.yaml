@@ -1,6 +1,8 @@
 # openmiop (pcie-ep-net) as a Talos system extension: omi0, Ethernet over
-# the Mixtile Cluster Box PCIe fabric. Built against the exact Talos
-# kernel tree from talos-kernel-build, with the Talos LLVM toolchain.
+# the Mixtile Cluster Box PCIe fabric, plus the Blade 3 board modules from
+# the same source release. Built against the exact Talos kernel tree from
+# talos-kernel-build, with the Talos LLVM toolchain, the way
+# siderolabs/pkgs builds out-of-tree modules.
 name: openmiop
 variant: scratch
 shell: /bin/bash
@@ -31,32 +33,38 @@ steps:
         rm openmiop.tar.gz
     build:
       - |
+        # As siderolabs/pkgs builds out-of-tree modules (xdma-driver-pkg):
+        # one source release, every module from it.
         make -C /src M=$(pwd)/drivers/openmiop modules
-        # Blade 3 board support shipped with openmiop: RTL8125 port LEDs.
-        cp -r /pkg/blade3-leds ./blade3-leds
-        make -C /src M=$(pwd)/blade3-leds modules
-        # NVMe back after a Cluster Box PERST# (no host link-down handling
-        # in the Talos 6.18 dw-rockchip driver).
-        cp -r /pkg/blade3-nvme-recover ./blade3-nvme-recover
-        make -C /src M=$(pwd)/blade3-nvme-recover modules
+        # Blade 3 board modules: RTL8125 port LEDs, and the NVMe back after
+        # a Cluster Box PERST# (no host link-down handling in the Talos
+        # 6.18 dw-rockchip driver).
+        make -C /src M=$(pwd)/drivers/blade3 modules
     install:
       - |
         krel=$(cat /src/include/config/kernel.release)
-        mkdir -p /rootfs/usr/lib/modules/${krel}/extras
-        install -m 0644 drivers/openmiop/openmiop-ep.ko /rootfs/usr/lib/modules/${krel}/extras/
-        llvm-strip --strip-debug /rootfs/usr/lib/modules/${krel}/extras/openmiop-ep.ko
-        install -m 0644 blade3-leds/blade3-leds.ko /rootfs/usr/lib/modules/${krel}/extras/
-        llvm-strip --strip-debug /rootfs/usr/lib/modules/${krel}/extras/blade3-leds.ko
-        install -m 0644 blade3-nvme-recover/blade3-nvme-recover.ko /rootfs/usr/lib/modules/${krel}/extras/
-        llvm-strip --strip-debug /rootfs/usr/lib/modules/${krel}/extras/blade3-nvme-recover.ko
+        mkdir -p /rootfs/usr/lib/modules/${krel}
+        for d in drivers/openmiop drivers/blade3; do
+          make -C /src M=$(pwd)/${d} modules_install \
+            INSTALL_MOD_PATH=/rootfs/usr INSTALL_MOD_DIR=extras INSTALL_MOD_STRIP=1 DEPMOD=true
+        done
         sed -e "s/@VERSION@/{{ .openmiop_version }}/" /pkg/manifest.yaml > /rootfs/manifest.yaml
     test:
       - |
-        find /rootfs/usr/lib/modules -name blade3-leds.ko | grep -q .
-        find /rootfs/usr/lib/modules -name blade3-nvme-recover.ko | grep -q .
-        ko=$(find /rootfs/usr/lib/modules -name openmiop-ep.ko)
-        grep -aq "vermagic=6.18.54-talos SMP mod_unload modversions aarch64" "$ko"
-        grep -aq "license=GPL" "$ko"
+        krel=$(cat /src/include/config/kernel.release)
+        test "${krel}" = "{{ .linux_version }}-talos"
+        for m in openmiop-ep blade3-leds blade3-nvme-recover; do
+          ko=/rootfs/usr/lib/modules/${krel}/extras/${m}.ko
+          test -f "${ko}"
+          grep -aq "vermagic=${krel} SMP mod_unload modversions aarch64" "${ko}"
+          grep -aq "license=GPL" "${ko}"
+          # Signed by modules_install (CONFIG_MODULE_SIG_ALL), as in pkgs;
+          # here with the throw-away key of this kernel tree, not the
+          # Talos key, so the image still drops module.sig_enforce.
+          grep -Fq "~Module signature appended~" "${ko}"
+        done
+        # Only the modules: no modules.* index files of the kernel tree.
+        test "$(find /rootfs/usr/lib/modules -type f | grep -vc '/extras/')" = 0
         grep -q "@VERSION@" /rootfs/manifest.yaml && exit 1 || true
 finalize:
   - from: /rootfs/usr

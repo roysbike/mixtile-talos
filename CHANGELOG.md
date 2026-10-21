@@ -5,6 +5,23 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Talos v1.14.4 (PKGS v1.14.0-44-g2ec10eb, TOOLS v1.14.0-9-g6b71647):
+  Linux 6.18.57-talos; the kernel tree for openmiop follows siderolabs/pkgs
+  2ec10eb (config, patches: the tun and libceph fixes are upstream now).
+  Extensions drbd 9.3.4, zfs 2.4.4, panfrost, rockchip-rknn for v1.14.4,
+  iscsi-tools v0.2.0, pinned to the digests Talos released.
+- openmiop 0.6.1-v1.14.4 from pcie-ep-net v0.6.1 (`a368e65`): the Blade 3
+  board modules (blade3-leds, blade3-nvme-recover) come from that release
+  (`drivers/blade3`) instead of copies here. The extension is built the way
+  siderolabs/pkgs builds out-of-tree modules (`modules_install` into
+  `extras`, stripped, signed by `CONFIG_MODULE_SIG_ALL`; here with the
+  kernel tree's throw-away key, so the image still drops
+  `module.sig_enforce`).
+- Kernel arguments: `console=ttyFIQ0` removed (only vendor kernels have
+  it), as on the sbc-rockchip boards.
+
 ## [0.6.0] - 2026-10-20
 
 Blade OS of OpenMIOP Stack v0.6.0. Same Talos v1.14.2 kernel, DTB, U-Boot

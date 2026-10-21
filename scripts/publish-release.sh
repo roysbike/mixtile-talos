@@ -74,6 +74,6 @@ sed -e "s|@INSTALLER@|${installer}|g" \
 prerelease=()
 [[ "${TAG}" == *-* ]] && prerelease=(--prerelease)
 gh release create "${TAG}" --verify-tag "${prerelease[@]}" \
-    --title "mixtile-talos ${TAG}: Talos v1.14.2 for Mixtile Blade 3 with openmiop" \
+    --title "mixtile-talos ${TAG}: Talos v1.14.4 for Mixtile Blade 3 with openmiop" \
     --notes-file "${OUT}/release-notes.md" \
     "${OUT}"/release/*

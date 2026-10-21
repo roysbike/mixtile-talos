@@ -18,7 +18,7 @@
 > `--image` и с тем же образом в `machine.install.image`.
 
 Этот репозиторий собирает ARM64 SBC overlay и загрузочные образы Talos Linux
-`v1.14.2` для Mixtile Blade 3 (RK3588), в том числе для плат в Mixtile Cluster Box.
+`v1.14.4` для Mixtile Blade 3 (RK3588), в том числе для плат в Mixtile Cluster Box.
 
 Здесь остаются сборка образа и прошивка eMMC. Установка Cozystack, классы
 хранения и скрипты доступа к UI живут в отдельном проекте `cozystack-box-mixtile`.
@@ -55,9 +55,9 @@ openmiop как подписанный extension): [docs/upstream.ru.md](docs/up
 
 ## Базовые версии
 
-- Talos и imager: `v1.14.2`
-- Пакеты Talos: `v1.14.0-37-g6c312e4`
-- Linux: `6.18.54`, штатное ARM64-ядро Talos без изменений
+- Talos и imager: `v1.14.4`
+- Пакеты Talos: `v1.14.0-44-g2ec10eb`
+- Linux: `6.18.57`, штатное ARM64-ядро Talos без изменений
 - U-Boot: `v2026.07`
 - DTS платы и конфигурация U-Boot: mainline-порт Blade 3 из Armbian
 - TF-A: `lts-v2.14.6`
@@ -78,10 +78,10 @@ Overlay использует тот же API пакетов и установщ�
 - overlay-установщик Talos 1.14;
 - профиль raw-образа.
 
-Итоговые образы используют официальное ядро Talos 1.14.2 и включают:
+Итоговые образы используют официальное ядро Talos 1.14.4 и включают:
 
-- `ghcr.io/siderolabs/drbd:9.3.4-v1.14.2`
-- `ghcr.io/siderolabs/zfs:2.4.4-v1.14.2`
+- `ghcr.io/siderolabs/drbd:9.3.4-v1.14.4`
+- `ghcr.io/siderolabs/zfs:2.4.4-v1.14.4`
 - `ghcr.io/siderolabs/iscsi-tools:v0.2.0`
 
 DRBD и ZFS совпадают с релизом ядра, ABI модулей и ключом подписи
@@ -140,7 +140,7 @@ Docker Desktop должен быть запущен, эмуляция ARM64 вк
 ./scripts/verify-kernel-config.sh
 ```
 
-Проверка берёт точный `config-arm64` из коммита пакетов Talos 1.14.2 и
+Проверка берёт точный `config-arm64` из коммита пакетов Talos 1.14.4 и
 смотрит, что модульные драйверы storage, NVMe, VFIO и Realtek перечислены в
 манифесте initramfs Talos ARM64.
 
