@@ -12,7 +12,7 @@
 > Гбит/с. Установка, обновление по digest, проверка и ограничения — в
 > [README.md](README.md#openmiop-stack-v061), [CHANGELOG.md](CHANGELOG.md)
 > и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.1). Установщик:
-> `ghcr.io/roysbike/mixtile-talos-installer:v0.6.1` (digest — на странице релиза).
+> `ghcr.io/roysbike/mixtile-talos-installer@sha256:c0fe6ec4eb157ab8d993477b7b85abc982dc1ecbd7a9fb3cc0bcb054159fda8e`.
 >
 > Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
 > `--image` и с тем же образом в `machine.install.image`.
