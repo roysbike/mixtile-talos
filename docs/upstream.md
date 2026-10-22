@@ -4,7 +4,13 @@
 
 Goal: install Talos on a Blade 3 in a Mixtile Cluster Box from
 [Image Factory](https://factory.talos.dev) with the PCIe fabric working,
-instead of from this repository. Status: plan, nothing submitted.
+instead of from this repository.
+
+**Status (2026-10-22): on hold.** Nothing is submitted to Siderolabs and
+no submission is planned for now. Steps 1 and 2 below are done (v0.6.1),
+and the overlay keeps the sbc-rockchip layout, so the work can be picked
+up again. The document stays as a description of how this repository maps
+onto the official Talos layout.
 
 ## How Talos ships boards and drivers
 

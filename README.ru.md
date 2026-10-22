@@ -1,271 +1,315 @@
-# Talos 1.14 для Mixtile Blade 3
+# Talos Linux для Mixtile Blade 3 в Cluster Box
 
 [English](README.md) · [Русский](README.ru.md)
 
-> **Релиз v0.6.1 (OpenMIOP Stack v0.6.1, Talos v1.14.4, протокол v4, push-режим, gateway pull, zero-copy, контрольные суммы между блейдами):**
-> образ Talos со встроенным openmiop (Ethernet `omi0` между блейдами
-> Cluster Box по PCIe) и восстановлением NVMe Blade 3 после перезагрузки
-> Cluster Box. Новое по сравнению с v0.6.0: Talos v1.14.4 (Linux 6.18.57),
-> openmiop и модули платы Blade 3 собираются из одного релиза
-> pcie-ep-net v0.6.1 так, как Talos собирает внешние модули. Сам драйвер
-> и скорость те же, что в v0.6.0: один поток между блейдами 7,8-8,0
-> Гбит/с. Установка, обновление по digest, проверка и ограничения — в
-> [README.md](README.md#openmiop-stack-v061), [CHANGELOG.md](CHANGELOG.md)
-> и на [странице релиза](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.1). Установщик:
-> `ghcr.io/roysbike/mixtile-talos-installer@sha256:c0fe6ec4eb157ab8d993477b7b85abc982dc1ecbd7a9fb3cc0bcb054159fda8e`.
->
-> Обновляйте ноды по одной, **с drain** (не `--drain=false`), всегда с
-> `--image` и с тем же образом в `machine.install.image`.
+**Образы Talos Linux (Kubernetes) для Mixtile Blade 3 (RK3588) в Mixtile
+Cluster Box со встроенной сетью PCIe-фабрики `omi0`.** Репозиторий
+собирает overlay платы для Talos ARM64 (U-Boot, device tree, установщик),
+system extension `openmiop` и готовые образы диска и установщика. На
+блейдах ничего собирать не нужно.
 
-Этот репозиторий собирает ARM64 SBC overlay и загрузочные образы Talos Linux
-`v1.14.4` для Mixtile Blade 3 (RK3588), в том числе для плат в Mixtile Cluster Box.
+**Текущий релиз: [v0.6.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.1)**
+(2026-10-21): Talos v1.14.4, Linux 6.18.57-talos, входит в OpenMIOP Stack
+v0.6.1. Release notes: [v0.6.1](docs/release-notes/v0.6.1.md) ·
+[CHANGELOG.md](CHANGELOG.md).
 
-Здесь остаются сборка образа и прошивка eMMC. Установка Cozystack, классы
-хранения и скрипты доступа к UI живут в отдельном проекте `cozystack-box-mixtile`.
+```
+ghcr.io/roysbike/mixtile-talos-installer@sha256:c0fe6ec4eb157ab8d993477b7b85abc982dc1ecbd7a9fb3cc0bcb054159fda8e
+```
 
-## Оборудование и для кого это
+## Содержание
 
-**Mixtile Cluster Box** — компактное шасси на четыре платы **Mixtile
-Blade 3**. Внутри:
+* [OpenMIOP Stack](#openmiop-stack)
+* [Возможности](#возможности)
+* [Оборудование и требования](#оборудование-и-требования)
+* [Что в образе](#что-в-образе)
+* [Установка нового узла](#установка-нового-узла)
+* [Конфигурация машины для omi0](#конфигурация-машины-для-omi0)
+* [Обновление узла](#обновление-узла)
+* [Проверка](#проверка)
+* [Технические подробности](#технические-подробности)
+* [Известные ограничения](#известные-ограничения)
+* [Сборка](#сборка)
+* [Структура репозитория](#структура-репозитория)
 
-* управляющий контроллер (BMC): MediaTek MT7620A (MIPS) с OpenWrt. Он
-  включает, выключает и перезагружает блейды, даёт доступ к их
-  последовательным консолям и служит корневым комплексом PCIe всего шасси;
-* PCIe-коммутатор ASMedia ASM2824 (Gen3): линк Gen3 x2 к каждому слоту и
-  линк Gen1 x1 к BMC.
+## OpenMIOP Stack
 
-**Mixtile Blade 3** — вычислительная плата на Rockchip RK3588
-(4× Cortex-A76 + 4× Cortex-A55) с eMMC и слотом M.2 NVMe. Её контроллер
-PCIe 3.0 x4 разделён пополам: линии 0-1 идут к коммутатору Cluster Box,
-линии 2-3 — к NVMe. Blade 3 работает и сама по себе, без Cluster Box.
-
-Mixtile поставляет шасси со своей прошивкой BMC и своим сетевым
+Mixtile поставляет Cluster Box со своей прошивкой BMC и своим сетевым
 драйвером для блейдов (MIOP). **OpenMIOP Stack** — независимая открытая
-замена для владельцев Cluster Box с платами Blade 3 (или отдельной
-Blade 3), которым нужно:
+замена из трёх репозиториев, которые выпускаются вместе:
 
-| Что нужно | Репозиторий |
+| Репозиторий | Что даёт | Stack v0.6.1 |
+| --- | --- | --- |
+| [pcie-ep-net](https://github.com/roysbike/pcie-ep-net) | драйвер блейда `openmiop-ep` (`omi0`), модуль BMC `omi-rc`, модули платы Blade 3 | [v0.6.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.6.1) |
+| **mixtile-talos** (этот) | Talos Linux (Kubernetes) для Blade 3 со встроенным openmiop | [v0.6.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.1) (Talos v1.14.4) |
+| [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) | OpenWrt для BMC: питание и консоли блейдов, сторона BMC в openmiop, сетевой край кластера, веб-интерфейс, обновления | [v0.4.0](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.0) (OpenWrt 25.12.6) |
+
+```
+        BMC Cluster Box (MT7620A, OpenWrt)  omi-rc, omi0 10.20.0.1, шлюз в LAN
+                       |  PCIe Gen1 x1
+                 PCIe-коммутатор ASM2824    трафик блейд-блейд остаётся здесь
+              /      /        \       \     по Gen3 x2
+         слот 1   слот 2   слот 3   слот 4  Mixtile Blade 3: Talos + openmiop, omi0 10.20.0.x
+```
+
+## Возможности
+
+* **Официальный Talos и официальное ядро.** Talos v1.14.4 с ядром
+  Siderolabs 6.18.57-talos и официальными расширениями под него (DRBD,
+  ZFS, iSCSI, GPU Panfrost, NPU Rockchip).
+* **Поддержка платы Blade 3.** Device tree и U-Boot 2026.07 для Blade 3
+  (из mainline-порта Armbian), TF-A и DDR-блоб Rockchip, U-Boot в секторе
+  64, последовательная консоль на UART2.
+* **Сеть PCIe-фабрики.** Расширение `openmiop` даёт `omi0`:
+  7,8-8,0 Гбит/с на поток между блейдами, BMC — шлюз в LAN.
+* **NVMe на полной скорости в шасси.** M.2 NVMe поднимается в Gen3 x2, а
+  `blade3-nvme-recover` возвращает его после сброса PCIe в Cluster Box
+  (перезагрузка BMC).
+* **Индикаторы портов.** `blade3-leds` управляет индикаторами портов
+  Ethernet 2.5G.
+* **Воспроизводимые релизы.** GitHub Actions собирает каждый релиз на
+  нативном arm64, закрепляет расширения по digest, проверяет установщик
+  (`scripts/verify-installer.sh`) и публикует образ, загрузочные файлы и
+  контрольные суммы.
+
+## Оборудование и требования
+
+| | |
 | --- | --- |
-| Ethernet между блейдами через PCIe-коммутатор (`omi0`, ~5 Гбит/с на поток, ~25 Гбит/с при четырёх отправителях) | [pcie-ep-net](https://github.com/roysbike/pcie-ep-net) |
-| Talos Linux (Kubernetes) на Blade 3, в Cluster Box или отдельно | [mixtile-talos](https://github.com/roysbike/mixtile-talos) (этот репозиторий) |
-| Свежий OpenWrt на BMC: питание и консоли блейдов, обновление прошивки, сторона OpenMIOP на BMC | [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) |
+| Плата | Mixtile Blade 3 (RK3588, 4× Cortex-A76 + 4× Cortex-A55), установка на eMMC |
+| Шасси | Mixtile Cluster Box (PCIe-коммутатор ASM2824, BMC MT7620A), до 4 блейдов |
+| Прошивка BMC | [прошивка ClusterBox v0.4.0](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.0) (или v0.3.0) для `omi0`. Со штатной прошивкой Mixtile блейды загружаются и работают, но без `omi0` |
+| Kubernetes | образ версию не фиксирует; проверено с v1.34.3 (Cozystack) |
+| Проверено на | Cluster Box с четырьмя Blade 3: 3 control plane + 1 worker, DRBD/LINSTOR, ZFS, CloudNativePG |
 
-План сделать из этого официальный образ Talos (overlay в siderolabs/sbc-rockchip,
-openmiop как подписанный extension): [docs/upstream.ru.md](docs/upstream.ru.md).
+Образ собран для блейдов в Cluster Box: device tree настраивает
+PCIe-контроллер как endpoint в сторону шасси. Отдельный Blade 3 — не
+проверенная конфигурация.
 
-## Базовые версии
+## Что в образе
 
-- Talos и imager: `v1.14.4`
-- Пакеты Talos: `v1.14.0-44-g2ec10eb`
-- Linux: `6.18.57`, штатное ARM64-ядро Talos без изменений
-- U-Boot: `v2026.07`
-- DTS платы и конфигурация U-Boot: mainline-порт Blade 3 из Armbian
-- TF-A: `lts-v2.14.6`
-- Бинарник тренировки DDR Rockchip: rkbin, коммит `74213af1`
+| Компонент | Версия / источник |
+| --- | --- |
+| Talos, imager | v1.14.4 |
+| Ядро | 6.18.57-talos (официальное ядро Talos; пакеты Talos `v1.14.0-44-g2ec10eb`) |
+| U-Boot | v2026.07, конфигурация Blade 3 из mainline-порта Armbian |
+| TF-A | `lts-v2.14.6` |
+| DDR-блоб | rkbin `74213af1` |
+| Device tree | `rk3588-mixtile-blade3.dtb` (порт Armbian + изменения PCIe для Cluster Box, см. [Технические подробности](#технические-подробности)) |
+| Расширение openmiop | `0.6.1-v1.14.4`: `openmiop-ep`, `blade3-nvme-recover`, `blade3-leds` из [pcie-ep-net v0.6.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.6.1) |
+| Официальные расширения | `drbd 9.3.4`, `zfs 2.4.4`, `iscsi-tools v0.2.0`, `panfrost`, `rockchip-rknn` (сборки под v1.14.4, закреплены по digest) |
+| Аргументы ядра | `console=tty0 console=ttyS2,1500000n8 cma=128MB … -module.sig_enforce` |
 
-Overlay использует тот же API пакетов и установщика, что и официальная
-поддержка Turing RK1 в
-[`siderolabs/sbc-rockchip`](https://github.com/siderolabs/sbc-rockchip).
-Добавлены DTB, U-Boot и смещение установки именно для Blade 3. DTB Turing RK1
-не считается взаимозаменяемым с Blade 3.
+Файлы релиза:
 
-## Что собирается
+| Файл | Для чего |
+| --- | --- |
+| установщик `ghcr.io/roysbike/mixtile-talos-installer@sha256:…` | `talosctl upgrade` и `machine.install.image` |
+| `openmiop-0.6.1-blade3-talos-1.14.4-arm64.raw.xz` | образ диска для нового узла (eMMC) |
+| `openmiop-0.6.1-blade3-talos-1.14.4-arm64-boot-files.tar.gz` | DTB, `u-boot-rockchip.bin`, `openmiop-ep.ko`, манифест расширения |
+| `SHA256SUMS`, `BUILD-INFO.txt` | контрольные суммы, запись о сборке (коммит, версии, digest'ы) |
 
-`sbc-mixtile-blade3` содержит:
+## Установка нового узла
 
-- `u-boot-rockchip.bin`, записывается с сектора 64;
-- `rk3588-mixtile-blade3.dtb`;
-- overlay-установщик Talos 1.14;
-- профиль raw-образа.
+Каждый блейд прошивается отдельно, по USB в режиме MaskROM.
 
-Итоговые образы используют официальное ядро Talos 1.14.4 и включают:
+1. Скачайте из релиза образ диска и `SHA256SUMS` и проверьте их:
+   `sha256sum -c --ignore-missing SHA256SUMS` (macOS: `shasum -a 256 -c`).
+2. Установите `rkdeveloptool` (Linux: пакет дистрибутива или
+   [rockchip-linux/rkdeveloptool](https://github.com/rockchip-linux/rkdeveloptool);
+   macOS: `brew tap IgorKha/rkdeveloptool && brew install rkdeveloptool`)
+   и возьмите SPL-загрузчик Blade 3 `rk3588_spl_loader_v1.08.111.bin` из
+   [инструкции Mixtile](https://www.mixtile.com/docs/installing-talos-on-mixtile-blade-3/).
+   Другой загрузчик RK3588 не подставляйте; он нужен только для доступа
+   к eMMC по USB.
+3. Переведите DIP-переключатель 4 блейда в ON, передёрните питание и
+   проверьте, что плата видна: `rkdeveloptool ld`.
+4. Запишите образ:
 
-- `ghcr.io/siderolabs/drbd:9.3.4-v1.14.4`
-- `ghcr.io/siderolabs/zfs:2.4.4-v1.14.4`
-- `ghcr.io/siderolabs/iscsi-tools:v0.2.0`
+   ```sh
+   ./scripts/flash-blade3-macos.sh --image openmiop-0.6.1-blade3-talos-1.14.4-arm64.raw.xz \
+       --loader rk3588_spl_loader_v1.08.111.bin
+   ```
 
-DRBD и ZFS совпадают с релизом ядра, ABI модулей и ключом подписи
-официального Talos.
+   Скрипт (написан для macOS; нужны только `rkdeveloptool` и `xz`)
+   проверяет образ и подпись U-Boot в нём, ждёт ровно один Blade 3 в
+   MaskROM, спрашивает подтверждение и пишет eMMC. Вручную:
+   `rkdeveloptool db <loader>`, затем `rkdeveloptool wl 0 <image.raw>`,
+   `rkdeveloptool rd`.
+5. Верните DIP-переключатель 4 и загрузитесь. Последовательная консоль
+   (UART2, 1 500 000 бод; в Cluster Box — CONSOLE в веб-интерфейсе BMC)
+   должна показать `enabling system extension openmiop 0.6.1-v1.14.4`.
+6. Примените конфигурацию машины с `machine.install.disk: /dev/mmcblk0`,
+   `machine.install.image` = установщик выше и
+   [документами для omi0](#конфигурация-машины-для-omi0).
+
+Применение конфигурации к узлу, загруженному со старого образа, его не
+переустанавливает (`install sequence: 0 phase(s)`): после этого выполните
+на нём `talosctl upgrade --image …`. Новый control-plane узел не
+войдёт в etcd, пока в кластере числится мёртвый участник: сначала удалите
+его (`talosctl etcd remove-member <id>`, после `etcd snapshot`).
+
+## Конфигурация машины для omi0
+
+Свой адрес на каждый блейд (10.20.0.1 — это BMC). Применяется без
+перезагрузки: `talosctl -n <node> patch mc --mode no-reboot -p @omi.yaml`.
+
+```yaml
+# omi.yaml
+machine:
+  kernel:
+    modules:
+      - name: openmiop_ep
+---
+apiVersion: v1alpha1
+kind: LinkAliasConfig
+name: omi0
+selector:
+  match: link.driver == "openmiop-ep"
+---
+apiVersion: v1alpha1
+kind: LinkConfig
+name: omi0
+up: true
+mtu: 9000
+addresses:
+  - address: 10.20.0.<N>/24
+```
+
+Без `LinkAliasConfig` Talos называет интерфейс `enx<mac>`. Параметры
+драйвера (очереди, CPU, offload) задаются в
+`machine.kernel.modules[].parameters`; см.
+[README pcie-ep-net](https://github.com/roysbike/pcie-ep-net/blob/main/README.ru.md#настройка).
+
+## Обновление узла
+
+```sh
+talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:c0fe6ec4eb157ab8d993477b7b85abc982dc1ecbd7a9fb3cc0bcb054159fda8e
+talosctl -n <node> patch mc --mode no-reboot \
+  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer@sha256:c0fe6ec4eb157ab8d993477b7b85abc982dc1ecbd7a9fb3cc0bcb054159fda8e"}}}'
+```
+
+* **По одному узлу.** Перед следующим: в etcd все участники, реплики
+  хранилища (DRBD) синхронны, базы данных здоровы.
+* **Оставляйте drain по умолчанию** (без `--drain=false`). Обновление без
+  drain оставило реплики DRBD работающей базы в разном состоянии и
+  повредило её ext4.
+* **Узел с primary базы данных (CloudNativePG) сначала cordon** и
+  дождитесь переключения.
+* **Всегда передавайте `--image` и держите `machine.install.image` равным
+  ему.** `talosctl upgrade` без `--image` ставит то, что записано в этом
+  поле. Не задавайте `machine.install.grubUseUKICmdline: false`: со старым
+  образом в `machine.install.image` это загрузило ядро, которое отвергло
+  модуль openmiop.
+* Откат: `talosctl -n <node> rollback`.
+
+## Проверка
+
+```sh
+talosctl -n <node> version                        # Tag: v1.14.4
+talosctl -n <node> get extensions                 # openmiop 0.6.1-v1.14.4, drbd, zfs, ...
+talosctl -n <node> dmesg | grep openmiop          # "peer N up, 4 queues, doorbell, checksum offload"
+talosctl -n <node> get links | grep omi0          # alias omi0, up
+talosctl -n <node> get kernelmodulestatus | grep blade3   # blade3_leds, blade3_nvme_recover
+ping -c3 -M do -s 8972 10.20.0.<N>                # jumbo-кадр с другого участника фабрики
+```
+
+`scripts/openmiop-verify.sh <node-ip>` выполняет эти проверки разом. В
+логе ядра один раз появляется `module verification failed: signature
+and/or required key missing - tainting kernel`; см. ниже.
+
+## Технические подробности
+
+**Изменения device tree для Cluster Box** (поверх device tree Blade 3 от
+Armbian; каждое изменение прокомментировано в
+`artifacts/dtb/blade3/rk3588-mixtile-blade3.dts`):
+
+| Изменение | Зачем |
+| --- | --- |
+| Контроллер PCIe3 x4 `fe150000` как endpoint `pcie3x4_ep` (2 линии, compatible `openmiop,rk3588-pcie-ep`), host `pcie3x4` выключен | линии 0-1 идут на коммутатор Cluster Box; openmiop сам управляет контроллером (DBI, iATU, eDMA), поэтому не mainline `rockchip,rk3588-pcie-ep` |
+| Разделение PHY `data-lanes = <1 1 2 2>`, без общего refclk | линии 0-1 к коммутатору, 2-3 к M.2 NVMe; у шасси и блейда раздельные опорные частоты |
+| NVMe на `pcie3x2` без `reset-gpios` | PERST# NVMe — это U.2 PERST# блейда, им управляет Cluster Box; `blade3-nvme-recover` возвращает NVMe после сброса шасси. NVMe работает в Gen3 x2 и переезжает в PCI-домен 0001 |
+| PCIe SMMU (`mmu600_pcie`) выключен | трафик endpoint и чтения eDMA несут stream ID, которые не принадлежат ни одному устройству Linux |
+
+**Подпись модулей.** Talos подписывает свои модули ключом, который
+существует только во время официальной сборки ядра и потом уничтожается.
+Модули openmiop собираются здесь на том же дереве ядра
+(`artifacts/talos-kernel`, так же, как siderolabs/pkgs собирает внешние
+модули: `modules_install` в `extras`, без отладочных символов) и
+подписываются собственным ключом этой сборки, которому ядро не доверяет.
+Поэтому образ загружается с `-module.sig_enforce`. Всё остальное (DRBD,
+ZFS, …) — официальные подписанные сборки.
+
+**Конфигурация ядра.** Ядро — неизменённое ядро Talos ARM64.
+`scripts/verify-kernel-config.sh` проверяет конфигурацию закреплённого
+коммита пакетов Talos (хранилище, NVMe, VFIO, Realtek, netfilter для
+Kubernetes). Часть этих драйверов — модули из initramfs, как в любом
+образе Talos ARM64.
+
+**Интеграция openmiop:** [docs/openmiop.md](docs/openmiop.md).
+**Как overlay ложится на официальную раскладку Siderolabs**
+(siderolabs/sbc-rockchip, pkgs, extensions): [docs/upstream.ru.md](docs/upstream.ru.md).
+
+## Известные ограничения
+
+* `module.sig_enforce` выключен (см. выше).
+* Перезагрузка BMC сбрасывает все линки блейдов (~150 с, пока `omi-rc`
+  не загрузится снова) и M.2 NVMe; блейды и NVMe восстанавливаются сами.
+  С DRBD 9.3.4 перед плановой перезагрузкой BMC проверьте, что
+  `out-of-sync` равен 0
+  ([LINBIT/drbd#153](https://github.com/LINBIT/drbd/issues/153)), и на это
+  время отключите проверку изоляции primary в CloudNativePG.
+* BMC — шлюз блейдов в LAN: ~220-280 Мбит/с (процессор BMC). На трафик
+  между блейдами это не влияет.
+* ghcr.io иногда отказывает в скачивании образа во время `talosctl
+  upgrade`; повтор помогает.
+* Не проверено: отдельный Blade 3.
+
+Сетевые ограничения openmiop:
+[pcie-ep-net](https://github.com/roysbike/pcie-ep-net/blob/main/README.ru.md#известные-ограничения).
 
 ## Сборка
 
-Нужно:
+GitHub Actions (`.github/workflows/build-talos.yaml`) собирает на
+нативном arm64 при каждом push в `claude/**` и `feat/**` (кроме изменений
+только в документации) и для тегов `v*`:
 
-- Docker с Buildx;
-- OCI-реестр, видимый и хосту сборки, и Talos imager;
-- право push в выбранный namespace.
+1. overlay и расширение openmiop, публикуются в GHCR владельца
+   репозитория;
+2. установщик и образ диска;
+3. проверки: U-Boot в секторе 64 образа диска, `scripts/verify-installer.sh`
+   (ядро, расширения, модули openmiop и их `vermagic`, содержимое DTB,
+   аргументы ядра), `BUILD-INFO.txt`, `SHA256SUMS`;
+4. `_out/` как артефакт workflow (14 дней);
+5. для тега — релиз на GitHub (`scripts/publish-release.sh`, текст из
+   `docs/release-notes/<tag>.md`).
 
-```bash
+Локально (Docker с Buildx и эмуляцией arm64; намного медленнее CI):
+
+```sh
 docker login ghcr.io
-USERNAME=<github-user-or-org> ./build.sh all
+USERNAME=<github-user-or-org> ./build.sh all        # или: overlay, image
 ```
 
-Отдельные шаги:
+Результаты — в `_out/`. Переопределения: `OUTPUT_DIR`, `REGISTRY`,
+`IMAGE_TAG`, `TALOS_VERSION`; `OPENMIOP=0` собирает без openmiop и
+оставляет `module.sig_enforce`; `PIN_EXTENSIONS=0` берёт теги расширений
+вместо digest'ов. Makefile работает с GNU Make 3.81 из macOS.
 
-```bash
-USERNAME=<namespace> ./build.sh overlay
-USERNAME=<namespace> ./build.sh image
-```
+## Структура репозитория
 
-Артефакты пишутся в `_out/`. Значения по умолчанию меняются через
-`OUTPUT_DIR`, `REGISTRY`, `IMAGE_TAG` и `TALOS_VERSION`.
+| Путь | Содержимое |
+| --- | --- |
+| `artifacts/blade3/u-boot/` | U-Boot 2026.07 для Blade 3 (defconfig, DTS) |
+| `artifacts/dtb/blade3/` | device tree Blade 3 с изменениями PCIe для Cluster Box |
+| `artifacts/arm-trusted-firmware/rk3588/`, `artifacts/rkbin/rk3588/` | TF-A и DDR-блоб |
+| `artifacts/talos-kernel/` | дерево ядра Talos (конфигурация, патчи) для сборки модулей |
+| `artifacts/openmiop/` | расширение openmiop (сборка модулей, манифест) |
+| `installers/blade3/` | установщик overlay (размещение U-Boot, аргументы ядра) |
+| `profiles/blade3/` | профиль образа диска |
+| `build.sh`, `Makefile`, `Pkgfile` | точка входа сборки, сборка kres/bldr, версии |
+| `scripts/` | `verify-installer.sh`, `verify-kernel-config.sh`, `openmiop-verify.sh`, `flash-blade3-macos.sh`, `publish-release.sh` |
+| `docs/` | [интеграция openmiop](docs/openmiop.md), [официальная раскладка](docs/upstream.ru.md), [release notes](docs/release-notes/) |
 
-Профиль `blade3` собирает `metal-arm64.raw.xz`. После сборки `build.sh`
-проверяет, что в секторе 64 сжатого образа есть данные U-Boot.
-
-### macOS
-
-Docker Desktop должен быть запущен, эмуляция ARM64 включена. Makefile в
-репозитории совместим с GNU Make 3.81 из macOS и не требует GNU sed.
-
-Кросс-сборка и привилегированный ARM64 imager через Docker Desktop заметно
-медленнее, чем на Linux. Для повторяемой сборки используйте GitHub Actions.
-
-### GitHub Actions
-
-Отправьте ветку на GitHub и запустите **Actions → Build Talos for Mixtile Blade 3
-→ Run workflow**. Workflow:
-
-1. включает эмуляцию ARM64 и Buildx;
-2. публикует временный overlay в GHCR-namespace владельца репозитория;
-3. собирает installer и raw metal-образ;
-4. выкладывает `_out/` как artifact на 14 дней.
-
-Отдельный токен реестра не нужен: workflow использует `GITHUB_TOKEN` с правом
-`packages: write`.
-
-## Проверка конфигурации ядра
-
-```bash
-./scripts/verify-kernel-config.sh
-```
-
-Проверка берёт точный `config-arm64` из коммита пакетов Talos 1.14.4 и
-смотрит, что модульные драйверы storage, NVMe, VFIO и Realtek перечислены в
-манифесте initramfs Talos ARM64.
-
-Talos собирает часть драйверов модулями (`m`), а не встроенными (`y`):
-NBD, NVMe, VFIO, DM thin/multipath и R8169. Так и задумано: после загрузки
-модулей из initramfs поведение то же.
-
-Linux 6.18/Talos использует iptables поверх nftables. Устаревшие
-`CONFIG_IP_NF_FILTER` и `CONFIG_IP_NF_NAT` выключены, а `NF_TABLES`,
-`NFT_NAT`, `NF_NAT`, `NETFILTER_XT_NAT` и
-`NETFILTER_XT_TARGET_MASQUERADE` включены. Включать legacy-таблицы текущему
-Kube-OVN не нужно: для этого пришлось бы сопровождать своё ядро и отдельные
-сборки DRBD/ZFS.
-
-## Установка с macOS
-
-Сборка даёт `_out/metal-arm64.raw.xz` — то же имя файла, что в
-[инструкции Mixtile](https://www.mixtile.com/docs/installing-talos-on-mixtile-blade-3/).
-Перед записью проверьте и распакуйте образ:
-
-```bash
-brew install xz
-xz --test _out/metal-arm64.raw.xz
-xz --decompress --keep _out/metal-arm64.raw.xz
-shasum -a 256 _out/metal-arm64.raw.xz
-```
-
-### microSD
-
-Сначала точно определите диск. Команда ниже уничтожает все данные на нём:
-
-```bash
-diskutil list
-diskutil unmountDisk /dev/diskN
-sudo dd if=_out/metal-arm64.raw of=/dev/rdiskN bs=4m
-sync
-diskutil eject /dev/diskN
-```
-
-`diskN` — всё устройство microSD, а не раздел вроде `diskN1`. Во время `dd`
-на macOS нажмите `Ctrl-T`, чтобы увидеть прогресс.
-
-### eMMC по USB
-
-Поставьте `rkdeveloptool` из стороннего Homebrew tap:
-
-```bash
-brew tap IgorKha/rkdeveloptool
-brew trust --formula IgorKha/rkdeveloptool/rkdeveloptool
-brew install rkdeveloptool
-```
-
-Либо соберите
-[официальные исходники Rockchip](https://github.com/rockchip-linux/rkdeveloptool):
-
-```bash
-brew install automake autoconf libusb pkg-config
-git clone https://github.com/rockchip-linux/rkdeveloptool.git
-cd rkdeveloptool
-autoreconf -i
-./configure
-make
-sudo install -m 0755 rkdeveloptool /usr/local/bin/rkdeveloptool
-```
-
-Переведите Blade 3 в режим Rockchip Loader/Maskrom и проверьте, что плата видна:
-
-```bash
-rkdeveloptool ld
-```
-
-Временный `rk3588_spl_loader_*.bin` для `rkdeveloptool db` этот репозиторий не
-собирает. Возьмите loader, совместимый с Blade 3, из инструкции Mixtile.
-Произвольный loader для RK3588 не подходит. Сохраните файл как
-`rk3588_spl_loader_v1.08.111.bin` в корне репозитория, включите DIP switch 4,
-перезапустите питание и выполните:
-
-```bash
-./scripts/flash-blade3-macos.sh
-```
-
-Скрипт проверяет сжатый образ и подпись RKNS у U-Boot, ждёт ровно одну Blade 3
-в режиме MaskROM, спрашивает подтверждение разрушающей операции, загружает
-временный SPL и записывает образ на eMMC. Пути к образу и loader меняются
-через `--help`.
-
-В raw-образе уже лежит U-Boot этой сборки, начиная с сектора 64. SPL loader
-нужен только как временный USB-доступ к eMMC.
-
-Каждая Blade 3 в Cluster Box прошивается отдельно.
-
-## Первый запуск
-
-U-Boot пробует microSD, затем NVMe, затем eMMC. Последовательная консоль —
-UART2, 1 500 000 бод.
-
-Перед заменой рабочей установки:
-
-1. Сохраните копию текущего загрузочного образа.
-2. Проверьте новый образ со съёмного носителя.
-3. Снимите полный лог UART.
-4. В maintenance mode Talos проверьте eMMC, NVMe и оба Ethernet-порта.
-5. Только после этого ставьте систему на eMMC или NVMe.
-
-После загрузки:
-
-```bash
-talosctl -n <node> version
-talosctl -n <node> read /proc/config.gz | gzip -dc
-talosctl -n <node> get extensions
-talosctl -n <node> get kernelmodulestatus
-```
-
-Проверка на живом железе — гостевые KVM, трафик Geneve, репликация DRBD и
-импорт ZFS — требует физическую Blade 3. Успешная кросс-сборка её не заменяет.
-
-## Известный риск
-
-Mainline-поддержка Blade 3 моложе и менее обкатана, чем вендорное дерево 6.1.
-U-Boot 2026.07 включает описание Armbian FUSB302/USB-C PD, поэтому согласование
-PD происходит до старта Linux. На первом запуске используйте UART и заведомо
-исправное питание. Не затирайте рабочий носитель, пока не увидите PCIe, NVMe
-и Ethernet.
-
-Поддержку endpoint Cluster Box даёт открытый драйвер `openmiop`
-(<https://github.com/roysbike/pcie-ep-net>). Здесь он упакован как system
-extension вместе с нужными ему изменениями device tree; подробности — в
-[docs/openmiop.md](docs/openmiop.md).
+Лицензия: [Mozilla Public License 2.0](LICENSE) (как у overlays
+Siderolabs); модули openmiop — GPL-2.0 (pcie-ep-net).

@@ -5,7 +5,7 @@ BMC) over the internal PCIe switch. Blade-to-blade frames are DMA writes
 from one RK3588 straight into another's memory through the ASM2824; the
 BMC only publishes a peer table and carries a slow management path.
 Driver and design: <https://github.com/roysbike/pcie-ep-net>
-(`docs/architecture.md`, `docs/talos-port.md`).
+(`docs/architecture.md`, `docs/history/talos-port.md`).
 
 ## What the image changes
 
@@ -13,7 +13,7 @@ Driver and design: <https://github.com/roysbike/pcie-ep-net>
 | --- | --- | --- |
 | `openmiop` system extension (`openmiop-ep.ko` in `extras/`) | `artifacts/openmiop`, `build.sh` | the driver |
 | Talos kernel tree rebuilt for module builds | `artifacts/talos-kernel` | Talos publishes no build tree |
-| `-module.sig_enforce` | `build.sh` (imager `--extra-kernel-arg`) | the official module key is discarded after each kernel build; the module is unsigned |
+| `-module.sig_enforce` | `build.sh` (imager `--extra-kernel-arg`) | the official module key is discarded after each kernel build; the modules are signed only with this build's throw-away key |
 | PCIe3 PHY split into two x2, refclk mode off | DTS `&pcie30phy` | lanes 0-1 go to the Cluster Box, 2-3 to the M.2 slot; separate reference clocks |
 | `pcie3x4` host off, `pcie3x4_ep` on (`openmiop,rk3588-pcie-ep`) | DTS | fe150000 becomes the endpoint |
 | NVMe on `pcie3x2` with PERST | DTS | as on the vendor kernel; the NVMe trains 8 GT/s x2 instead of 2.5 GT/s |
@@ -26,7 +26,7 @@ serial/WWID are unaffected.
 ## Build
 
 CI (`.github/workflows/build-talos.yaml`) builds on native arm64 runners
-for every push to a `claude/**` branch and publishes:
+for every push to a `claude/**` or `feat/**` branch and publishes:
 
 * `ghcr.io/<owner>/sbc-mixtile-blade3-ci:<tag>` (overlay)
 * `ghcr.io/<owner>/openmiop:<openmiop_version>` (extension)
