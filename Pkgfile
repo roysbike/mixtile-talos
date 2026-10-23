@@ -27,7 +27,7 @@ vars:
   openmiop_version: 0.7.0-dev.1-v1.14.4
   openmiop_ref: 8a1202192ee8583bd51afe89837ca2c2107ab60b
   openmiop_sha256: 8087f413e6c369e7ff67d1d655f89760beef7defd1376ffb446c0682b9983b36
-  openmiop_sha512: 51f610ed032d515523b6264536da3aa6cae00dc7c2b06ba29b29c475c180a94b29b3879bc2d3d2f56a484a2c74b7e5beae3a6c6c96e28cf03847ac483d882976
+  openmiop_sha512: 9ffbee812ff35dc403b500180b5a982c422ea3f8e9e5c79aa8b1c5b6d6d641c82c5324cf98f41eabd07d2f4436dfcb85b0d56ee14dba057c2081bdd33045c04f
 
 labels:
   org.opencontainers.image.source: https://github.com/mixtile-rockchip/mixtile-talos
