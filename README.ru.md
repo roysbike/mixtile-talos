@@ -14,7 +14,7 @@ v0.6.2. Release notes: [v0.6.2](docs/release-notes/v0.6.2.md) ·
 [CHANGELOG.md](CHANGELOG.md).
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer:v0.6.2
+ghcr.io/roysbike/mixtile-talos-installer@sha256:705f826963a152470e9423fa47144f6eb313f9d062fc071985a2f0eba4e07960
 ```
 
 ## Содержание
@@ -184,9 +184,9 @@ addresses:
 ## Обновление узла
 
 ```sh
-talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.6.2
+talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:705f826963a152470e9423fa47144f6eb313f9d062fc071985a2f0eba4e07960
 talosctl -n <node> patch mc --mode no-reboot \
-  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer:v0.6.2"}}}'
+  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer@sha256:705f826963a152470e9423fa47144f6eb313f9d062fc071985a2f0eba4e07960"}}}'
 ```
 
 * **По одному узлу.** Перед следующим: в etcd все участники, реплики
