@@ -24,10 +24,10 @@ vars:
   linux_sha512: 6d9b39bee05daf05849c0bacc7bd407b13f34882bd06f46dc8c69835e98aba762d41f81852b5af34728c5cf15832fecb047c01d182bf3b581e82921885653689
 
   # openmiop (pcie-ep-net) driver for the Cluster Box PCIe fabric.
-  openmiop_version: 0.7.0-dev.3-v1.14.4
-  openmiop_ref: f267cf705311ba22fd9168b1c3682fb6b8e070e2
-  openmiop_sha256: bbf91942fd0f3cb255dec4bdf35bd22bbdcacb2b601be3b99a7609948ac47d89
-  openmiop_sha512: e36ece1ce3737968ad136473c52eaf132c380236686518d5878871aafefb38ea4beffd853aa0d05d11d493a77bfcf5c219ba6f50798989c945d827f9e8099f9c
+  openmiop_version: 0.7.0-dev.4-v1.14.4
+  openmiop_ref: ba9656b89428328974ee4f780a3103427fedf0f4
+  openmiop_sha256: f1e70d34151104cb93cf69210b35069c4c56dca26f2fe0a234abbfb94a990c33
+  openmiop_sha512: 838afe932215cb2e23c537a70795ddfced18cd8a2be927aad135f9b827e8e561e6990017b9baaa32009436bbd498ca44e71ac6987a0dfb6feb27fdb340dd4b0a
 
 labels:
   org.opencontainers.image.source: https://github.com/mixtile-rockchip/mixtile-talos
