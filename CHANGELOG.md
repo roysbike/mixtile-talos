@@ -5,6 +5,16 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Kernel argument `sysctl.net.core.default_qdisc=fq`: omi0 starts with
+  `mq` and `fq` per queue instead of `pfifo_fast`. Lab measurement with
+  four TCP streams between two blades: ping under load 0.36-0.94 ms
+  instead of 3.5-3.8 ms. `machine.sysctls` cannot do
+  this because omi0 exists before Talos applies it.
+  `scripts/verify-installer.sh` and `scripts/openmiop-verify.sh` check
+  the argument.
+
 ## [0.6.1] - 2026-10-21
 
 Blade OS of OpenMIOP Stack v0.6.1: Talos v1.14.4, and openmiop with the

@@ -63,6 +63,8 @@ ok "kernel ${uname}"
 cmdline=$(cat "${WORK}/sec-cmdline")
 [[ "${cmdline}" != *module.sig_enforce=1* ]] || fail "cmdline still has module.sig_enforce=1: ${cmdline}"
 ok "cmdline without module.sig_enforce: ${cmdline}"
+[[ "${cmdline}" == *sysctl.net.core.default_qdisc=fq* ]] || fail "cmdline without sysctl.net.core.default_qdisc=fq: ${cmdline}"
+ok "cmdline with sysctl.net.core.default_qdisc=fq"
 
 # The initramfs is a chain of newc archives; keep the extension images,
 # the generated modules.dep image and extensions.yaml.

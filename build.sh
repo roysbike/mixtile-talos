@@ -87,7 +87,9 @@ imager resolves them as OCI images.
 With OPENMIOP=1 the image drops the module.sig_enforce kernel argument:
 openmiop-ep.ko is built against the exact Talos kernel tree but cannot
 be signed with the Talos build key, which is discarded after each
-official kernel build.
+official kernel build. It also sets sysctl.net.core.default_qdisc=fq on
+the kernel command line: omi0 appears before Talos applies
+machine.sysctls, so only the boot-time default gives it fq.
 EOF
 }
 
@@ -212,6 +214,7 @@ build_images() {
         common_args+=(
             --system-extension-image "${REGISTRY}/${USERNAME}/${OPENMIOP_NAME}:${OPENMIOP_VERSION}"
             --extra-kernel-arg -module.sig_enforce
+            --extra-kernel-arg sysctl.net.core.default_qdisc=fq
         )
     fi
 

@@ -98,7 +98,7 @@ PCIe-контроллер как endpoint в сторону шасси. Отде
 | Device tree | `rk3588-mixtile-blade3.dtb` (порт Armbian + изменения PCIe для Cluster Box, см. [Технические подробности](#технические-подробности)) |
 | Расширение openmiop | `0.6.1-v1.14.4`: `openmiop-ep`, `blade3-nvme-recover`, `blade3-leds` из [pcie-ep-net v0.6.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.6.1) |
 | Официальные расширения | `drbd 9.3.4`, `zfs 2.4.4`, `iscsi-tools v0.2.0`, `panfrost`, `rockchip-rknn` (сборки под v1.14.4, закреплены по digest) |
-| Аргументы ядра | `console=tty0 console=ttyS2,1500000n8 cma=128MB … -module.sig_enforce` |
+| Аргументы ядра | `console=tty0 console=ttyS2,1500000n8 cma=128MB … -module.sig_enforce sysctl.net.core.default_qdisc=fq` |
 
 Файлы релиза:
 
@@ -239,6 +239,14 @@ Armbian; каждое изменение прокомментировано в
 подписываются собственным ключом этой сборки, которому ядро не доверяет.
 Поэтому образ загружается с `-module.sig_enforce`. Всё остальное (DRBD,
 ZFS, …) — официальные подписанные сборки.
+
+**Очереди на omi0.** Образ задаёт `sysctl.net.core.default_qdisc=fq` в
+командной строке ядра, поэтому omi0 получает `mq` с `fq` на каждой из
+четырёх очередей. Под нагрузкой задержка на omi0 остаётся ~0,4-0,9 мс
+вместо ~3,5 мс с `pfifo_fast` (измерение в лаборатории, ping во время
+четырёх TCP-потоков между двумя блейдами). Тот же
+параметр в `machine.sysctls` срабатывает слишком поздно: модуль openmiop
+создаёт omi0 в initramfs, до того как Talos применит конфигурацию машины.
 
 **Конфигурация ядра.** Ядро — неизменённое ядро Talos ARM64.
 `scripts/verify-kernel-config.sh` проверяет конфигурацию закреплённого

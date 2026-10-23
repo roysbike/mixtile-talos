@@ -97,7 +97,7 @@ is not a tested configuration.
 | Device tree | `rk3588-mixtile-blade3.dtb` (Armbian port + Cluster Box PCIe changes, see [Technical details](#technical-details)) |
 | openmiop extension | `0.6.1-v1.14.4`: `openmiop-ep`, `blade3-nvme-recover`, `blade3-leds` from [pcie-ep-net v0.6.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.6.1) |
 | Official extensions | `drbd 9.3.4`, `zfs 2.4.4`, `iscsi-tools v0.2.0`, `panfrost`, `rockchip-rknn` (the v1.14.4 builds, pinned by digest) |
-| Kernel arguments | `console=tty0 console=ttyS2,1500000n8 cma=128MB … -module.sig_enforce` |
+| Kernel arguments | `console=tty0 console=ttyS2,1500000n8 cma=128MB … -module.sig_enforce sysctl.net.core.default_qdisc=fq` |
 
 Release assets:
 
@@ -238,6 +238,14 @@ modules: `modules_install` into `extras`, stripped) and signed with this
 build's own key, which the kernel does not trust. The image therefore
 boots with `-module.sig_enforce`. Everything else (DRBD, ZFS, …) is the
 official signed build.
+
+**Queueing on omi0.** The image sets `sysctl.net.core.default_qdisc=fq`
+on the kernel command line, so omi0 gets `mq` with `fq` on each of its
+four queues. Under load this keeps the latency on omi0 at ~0.4-0.9 ms
+instead of ~3.5 ms with `pfifo_fast` (lab measurement, ping during four
+TCP streams between two blades). The same setting in
+`machine.sysctls` comes too late: the openmiop module creates omi0 in
+the initramfs, before Talos applies the machine configuration.
 
 **Kernel configuration.** The kernel is the unmodified Talos ARM64
 kernel. `scripts/verify-kernel-config.sh` checks the configuration of
