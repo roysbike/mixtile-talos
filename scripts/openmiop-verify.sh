@@ -43,6 +43,8 @@ done
 t get disks | grep -q nvme0n1; check "NVMe present" $?
 # udev names the link enx<mac>; LinkAliasConfig gives it the alias omi0.
 t get links | grep -E " omi0 " | grep -q " up "; check "omi0 link up (alias)" $?
+# fq from the kernel command line, so omi0 has it from the start (mq + fq per queue).
+echo "$cmdline" | grep -q "sysctl.net.core.default_qdisc=fq"; check "default qdisc fq on the cmdline" $?
 t get addresses | grep -E "10\.20\.0\." | sed 's/^/    /'
 t get addresses | grep -E "end0|enP" | head -2 | sed 's/^/    /'
 exit $ok
