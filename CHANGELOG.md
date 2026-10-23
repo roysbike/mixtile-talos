@@ -5,15 +5,30 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-10-23
+
+Blade OS of OpenMIOP Stack v0.6.2: v0.6.1 with `fq` on omi0 from boot.
+Talos v1.14.4, openmiop 0.6.1-v1.14.4 (pcie-ep-net v0.6.1), DTB and
+U-Boot unchanged.
+
 ### Changed
 
 - Kernel argument `sysctl.net.core.default_qdisc=fq`: omi0 starts with
   `mq` and `fq` per queue instead of `pfifo_fast`. Lab measurement with
   four TCP streams between two blades: ping under load 0.36-0.94 ms
-  instead of 3.5-3.8 ms. `machine.sysctls` cannot do
-  this because omi0 exists before Talos applies it.
+  instead of 3.5-3.8 ms. `machine.sysctls` cannot do this because omi0
+  exists before Talos applies it.
   `scripts/verify-installer.sh` and `scripts/openmiop-verify.sh` check
   the argument.
+- README (EN/RU) restructured; the ClusterBox firmware to use is v0.4.1
+  (its nodectl no longer reads blade config space, which could wedge the
+  fabric during a blade reboot).
+
+### Removed
+
+- `patch/`: the vendor kernel, Talos and U-Boot patches from the old
+  vendor build; nothing used them since the image moved to the official
+  Talos kernel.
 
 ## [0.6.1] - 2026-10-21
 

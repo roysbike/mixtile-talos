@@ -8,13 +8,13 @@ Cluster Box со встроенной сетью PCIe-фабрики `omi0`.** �
 system extension `openmiop` и готовые образы диска и установщика. На
 блейдах ничего собирать не нужно.
 
-**Текущий релиз: [v0.6.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.1)**
-(2026-10-21): Talos v1.14.4, Linux 6.18.57-talos, входит в OpenMIOP Stack
-v0.6.1. Release notes: [v0.6.1](docs/release-notes/v0.6.1.md) ·
+**Текущий релиз: [v0.6.2](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.2)**
+(2026-10-23): Talos v1.14.4, Linux 6.18.57-talos, входит в OpenMIOP Stack
+v0.6.2. Release notes: [v0.6.2](docs/release-notes/v0.6.2.md) ·
 [CHANGELOG.md](CHANGELOG.md).
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer@sha256:c0fe6ec4eb157ab8d993477b7b85abc982dc1ecbd7a9fb3cc0bcb054159fda8e
+ghcr.io/roysbike/mixtile-talos-installer:v0.6.2
 ```
 
 ## Содержание
@@ -38,11 +38,11 @@ Mixtile поставляет Cluster Box со своей прошивкой BMC 
 драйвером для блейдов (MIOP). **OpenMIOP Stack** — независимая открытая
 замена из трёх репозиториев, которые выпускаются вместе:
 
-| Репозиторий | Что даёт | Stack v0.6.1 |
+| Репозиторий | Что даёт | Stack v0.6.2 |
 | --- | --- | --- |
 | [pcie-ep-net](https://github.com/roysbike/pcie-ep-net) | драйвер блейда `openmiop-ep` (`omi0`), модуль BMC `omi-rc`, модули платы Blade 3 | [v0.6.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.6.1) |
-| **mixtile-talos** (этот) | Talos Linux (Kubernetes) для Blade 3 со встроенным openmiop | [v0.6.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.1) (Talos v1.14.4) |
-| [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) | OpenWrt для BMC: питание и консоли блейдов, сторона BMC в openmiop, сетевой край кластера, веб-интерфейс, обновления | [v0.4.0](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.0) (OpenWrt 25.12.6) |
+| **mixtile-talos** (этот) | Talos Linux (Kubernetes) для Blade 3 со встроенным openmiop | [v0.6.2](https://github.com/roysbike/mixtile-talos/releases/tag/v0.6.2) (Talos v1.14.4) |
+| [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) | OpenWrt для BMC: питание и консоли блейдов, сторона BMC в openmiop, сетевой край кластера, веб-интерфейс, обновления | [v0.4.1](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.1) (OpenWrt 25.12.6) |
 
 ```
         BMC Cluster Box (MT7620A, OpenWrt)  omi-rc, omi0 10.20.0.1, шлюз в LAN
@@ -78,7 +78,7 @@ Mixtile поставляет Cluster Box со своей прошивкой BMC 
 | --- | --- |
 | Плата | Mixtile Blade 3 (RK3588, 4× Cortex-A76 + 4× Cortex-A55), установка на eMMC |
 | Шасси | Mixtile Cluster Box (PCIe-коммутатор ASM2824, BMC MT7620A), до 4 блейдов |
-| Прошивка BMC | [прошивка ClusterBox v0.4.0](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.0) (или v0.3.0) для `omi0`. Со штатной прошивкой Mixtile блейды загружаются и работают, но без `omi0` |
+| Прошивка BMC | [прошивка ClusterBox v0.4.1](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.1) (v0.4.0 и v0.3.0 тоже работают) для `omi0`. Со штатной прошивкой Mixtile блейды загружаются и работают, но без `omi0` |
 | Kubernetes | образ версию не фиксирует; проверено с v1.34.3 (Cozystack) |
 | Проверено на | Cluster Box с четырьмя Blade 3: 3 control plane + 1 worker, DRBD/LINSTOR, ZFS, CloudNativePG |
 
@@ -105,8 +105,8 @@ PCIe-контроллер как endpoint в сторону шасси. Отде
 | Файл | Для чего |
 | --- | --- |
 | установщик `ghcr.io/roysbike/mixtile-talos-installer@sha256:…` | `talosctl upgrade` и `machine.install.image` |
-| `openmiop-0.6.1-blade3-talos-1.14.4-arm64.raw.xz` | образ диска для нового узла (eMMC) |
-| `openmiop-0.6.1-blade3-talos-1.14.4-arm64-boot-files.tar.gz` | DTB, `u-boot-rockchip.bin`, `openmiop-ep.ko`, манифест расширения |
+| `openmiop-0.6.2-blade3-talos-1.14.4-arm64.raw.xz` | образ диска для нового узла (eMMC) |
+| `openmiop-0.6.2-blade3-talos-1.14.4-arm64-boot-files.tar.gz` | DTB, `u-boot-rockchip.bin`, `openmiop-ep.ko`, манифест расширения |
 | `SHA256SUMS`, `BUILD-INFO.txt` | контрольные суммы, запись о сборке (коммит, версии, digest'ы) |
 
 ## Установка нового узла
@@ -127,7 +127,7 @@ PCIe-контроллер как endpoint в сторону шасси. Отде
 4. Запишите образ:
 
    ```sh
-   ./scripts/flash-blade3-macos.sh --image openmiop-0.6.1-blade3-talos-1.14.4-arm64.raw.xz \
+   ./scripts/flash-blade3-macos.sh --image openmiop-0.6.2-blade3-talos-1.14.4-arm64.raw.xz \
        --loader rk3588_spl_loader_v1.08.111.bin
    ```
 
@@ -184,9 +184,9 @@ addresses:
 ## Обновление узла
 
 ```sh
-talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:c0fe6ec4eb157ab8d993477b7b85abc982dc1ecbd7a9fb3cc0bcb054159fda8e
+talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.6.2
 talosctl -n <node> patch mc --mode no-reboot \
-  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer@sha256:c0fe6ec4eb157ab8d993477b7b85abc982dc1ecbd7a9fb3cc0bcb054159fda8e"}}}'
+  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer:v0.6.2"}}}'
 ```
 
 * **По одному узлу.** Перед следующим: в etcd все участники, реплики
