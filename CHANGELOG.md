@@ -5,6 +5,21 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-24
+
+Blade OS of OpenMIOP Stack v0.7.0: openmiop 0.7.0-v1.14.4 from
+pcie-ep-net v0.7.0. Talos v1.14.4, DTB, U-Boot and the kernel command
+line unchanged.
+
+### Changed
+
+- openmiop 0.7.0: byte queue limits on the TX queues, chained eDMA runs
+  (`tx_chain`), at most 16 frames per run (`tx_batch`). Lab: one TCP
+  flow 8.5 instead of 7.8 Gbit/s, eight flows 11.5-11.9 instead of
+  10.6-10.8 Gbit/s, ping under that load 1.4 instead of 1.6-1.9 ms on
+  average and below 5 ms at most. Wire protocol unchanged: v0.7 blades
+  work with v0.6 blades during the rolling upgrade.
+
 ## [0.6.2] - 2026-10-23
 
 Blade OS of OpenMIOP Stack v0.6.2: v0.6.1 with `fq` on omi0 from boot.
