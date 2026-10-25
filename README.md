@@ -14,7 +14,7 @@ v0.7.0. Release notes: [v0.7.0](docs/release-notes/v0.7.0.md) · [v0.6.2](docs/r
 [CHANGELOG.md](CHANGELOG.md).
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer:v0.7.0
+ghcr.io/roysbike/mixtile-talos-installer@sha256:285b495ecc9f5e76cf661335dfdfb36089cfaa18a6ba378b57a595d5d0ea26f1
 ```
 
 ## Contents
@@ -183,9 +183,9 @@ parameters (queues, CPUs, offloads) go into
 ## Upgrade a node
 
 ```sh
-talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.7.0
+talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:285b495ecc9f5e76cf661335dfdfb36089cfaa18a6ba378b57a595d5d0ea26f1
 talosctl -n <node> patch mc --mode no-reboot \
-  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer:v0.7.0"}}}'
+  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer@sha256:285b495ecc9f5e76cf661335dfdfb36089cfaa18a6ba378b57a595d5d0ea26f1"}}}'
 ```
 
 * **One node at a time.** Before the next node: etcd has all members,
@@ -200,6 +200,9 @@ talosctl -n <node> patch mc --mode no-reboot \
   names. Do not set `machine.install.grubUseUKICmdline: false`: with an
   old image in `machine.install.image` it booted a kernel that rejected
   the openmiop module.
+* If the node cannot pull the installer (`error pulling upgrade image`),
+  load it first with `talosctl -n <node> image pull --namespace system
+  <installer>` and run the upgrade again.
 * Rollback: `talosctl -n <node> rollback`.
 
 ## Verify
