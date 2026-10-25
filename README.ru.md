@@ -14,7 +14,7 @@ v0.7.0. Release notes: [v0.7.0](docs/release-notes/v0.7.0.md) · [v0.6.2](docs/r
 [CHANGELOG.md](CHANGELOG.md).
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer:v0.7.0
+ghcr.io/roysbike/mixtile-talos-installer@sha256:285b495ecc9f5e76cf661335dfdfb36089cfaa18a6ba378b57a595d5d0ea26f1
 ```
 
 ## Содержание
@@ -184,9 +184,9 @@ addresses:
 ## Обновление узла
 
 ```sh
-talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.7.0
+talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:285b495ecc9f5e76cf661335dfdfb36089cfaa18a6ba378b57a595d5d0ea26f1
 talosctl -n <node> patch mc --mode no-reboot \
-  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer:v0.7.0"}}}'
+  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer@sha256:285b495ecc9f5e76cf661335dfdfb36089cfaa18a6ba378b57a595d5d0ea26f1"}}}'
 ```
 
 * **По одному узлу.** Перед следующим: в etcd все участники, реплики
@@ -201,6 +201,9 @@ talosctl -n <node> patch mc --mode no-reboot \
   поле. Не задавайте `machine.install.grubUseUKICmdline: false`: со старым
   образом в `machine.install.image` это загрузило ядро, которое отвергло
   модуль openmiop.
+* Если узел не может скачать установщик (`error pulling upgrade image`),
+  сначала загрузите его командой `talosctl -n <node> image pull
+  --namespace system <установщик>` и повторите обновление.
 * Откат: `talosctl -n <node> rollback`.
 
 ## Проверка
