@@ -5,6 +5,23 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-31
+
+Blade OS of OpenMIOP Stack v0.7.1: openmiop 0.7.1-v1.14.4 from
+pcie-ep-net v0.7.1. Talos v1.14.4, DTB, U-Boot and the kernel command
+line unchanged.
+
+### Fixed
+
+- blade3-nvme-recover: recovers the M.2 NVMe after a link drop shorter
+  than its 20 ms poll. On 2026-10-31 a blade's NVMe dropped its link by
+  itself and was back before the next poll; the Root Port had lost its
+  bus numbers and the NVMe its BARs, nvme marked the controller dead,
+  the ZFS pool was suspended and the node needed a hard reset. The
+  module now treats a Root Port without its bus number or Memory enable
+  as a link down and runs the usual recovery. New read-only parameter
+  `unseen`. The blade driver `openmiop-ep` is unchanged.
+
 ## [0.7.0] - 2026-10-24
 
 Blade OS of OpenMIOP Stack v0.7.0: openmiop 0.7.0-v1.14.4 from
