@@ -14,7 +14,7 @@ v0.7.1. Release notes: [v0.7.1](docs/release-notes/v0.7.1.md) · [v0.7.0](docs/r
 [CHANGELOG.md](CHANGELOG.md).
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer:v0.7.1
+ghcr.io/roysbike/mixtile-talos-installer@sha256:55cb24aad06312ad6d170636118890097930de0e9e28ce2e5877a1f11dab8748
 ```
 
 ## Contents
@@ -183,9 +183,9 @@ parameters (queues, CPUs, offloads) go into
 ## Upgrade a node
 
 ```sh
-talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.7.1
+talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:55cb24aad06312ad6d170636118890097930de0e9e28ce2e5877a1f11dab8748
 talosctl -n <node> patch mc --mode no-reboot \
-  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer:v0.7.1"}}}'
+  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer@sha256:55cb24aad06312ad6d170636118890097930de0e9e28ce2e5877a1f11dab8748"}}}'
 ```
 
 * **One node at a time.** Before the next node: etcd has all members,
