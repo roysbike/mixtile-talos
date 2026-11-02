@@ -4,9 +4,9 @@ set -Eeuo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "${ROOT}"
 
-TALOS_VERSION=${TALOS_VERSION:-v1.14.4}
-PKGS=${PKGS:-v1.14.0-44-g2ec10eb}
-TOOLS=${TOOLS:-v1.14.0-9-g6b71647}
+TALOS_VERSION=${TALOS_VERSION:-v1.14.5}
+PKGS=${PKGS:-v1.14.0-48-gf4bda77}
+TOOLS=${TOOLS:-v1.14.0-11-g8dad45e}
 REGISTRY=${REGISTRY:-ghcr.io}
 USERNAME=${USERNAME:-}
 IMAGE_TAG=${IMAGE_TAG:-v0.3.0}
