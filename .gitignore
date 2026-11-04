@@ -21,3 +21,6 @@ cozystack-compatibility-summary.txt
 *.cmd
 modules.order
 Module.symvers
+
+# Local go build of the installer
+installers/blade3/src/rk3588
