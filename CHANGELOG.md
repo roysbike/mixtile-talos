@@ -5,6 +5,23 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-04
+
+Blade OS of OpenMIOP Stack v0.7.2: v0.7.1 on Talos v1.14.5, openmiop
+0.7.1-v1.14.5 (same pcie-ep-net v0.7.1 code). DTB, U-Boot and the kernel
+command line unchanged.
+
+### Changed
+
+- Talos v1.14.5 (Linux 6.18.58, etcd 3.7.3, on-demand kernel module
+  loading: modules such as `drbd_transport_tcp` no longer need to be
+  listed in the machine configuration). The kernel tree for the openmiop
+  modules follows siderolabs/pkgs f4bda77 (`v1.14.0-48-gf4bda77`, adds
+  patch 0019, the ACPI fixed-event power button); openmiop
+  0.7.1-v1.14.5, same pcie-ep-net v0.7.1 code. Extensions DRBD 9.3.4,
+  ZFS 2.4.4 and the rest as built for v1.14.5. Installer machinery
+  v1.14.5.
+
 ## [0.7.1] - 2026-10-31
 
 Blade OS of OpenMIOP Stack v0.7.1: openmiop 0.7.1-v1.14.4 from

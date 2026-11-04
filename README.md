@@ -8,13 +8,13 @@ repository builds a Talos ARM64 board overlay (U-Boot, device tree,
 installer), the `openmiop` system extension and ready-to-flash disk and
 installer images. Nothing has to be compiled on the blades.
 
-**Current release: [v0.7.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.7.1)**
-(2026-10-31): Talos v1.14.4, Linux 6.18.57-talos, part of OpenMIOP Stack
-v0.7.1. Release notes: [v0.7.1](docs/release-notes/v0.7.1.md) · [v0.7.0](docs/release-notes/v0.7.0.md) · [v0.6.2](docs/release-notes/v0.6.2.md) ·
+**Current release: [v0.7.2](https://github.com/roysbike/mixtile-talos/releases/tag/v0.7.2)**
+(2026-11-04): Talos v1.14.5, Linux 6.18.58-talos, part of OpenMIOP Stack
+v0.7.2. Release notes: [v0.7.2](docs/release-notes/v0.7.2.md) · [v0.7.1](docs/release-notes/v0.7.1.md) · [v0.7.0](docs/release-notes/v0.7.0.md) · [v0.6.2](docs/release-notes/v0.6.2.md) ·
 [CHANGELOG.md](CHANGELOG.md).
 
 ```
-ghcr.io/roysbike/mixtile-talos-installer@sha256:55cb24aad06312ad6d170636118890097930de0e9e28ce2e5877a1f11dab8748
+ghcr.io/roysbike/mixtile-talos-installer:v0.7.2
 ```
 
 ## Contents
@@ -38,11 +38,11 @@ Mixtile ships the Cluster Box with its own BMC firmware and its own blade
 network driver (MIOP). The **OpenMIOP Stack** is an independent, open
 replacement made of three repositories that are released together:
 
-| Repository | What it gives you | Stack v0.7.1 |
+| Repository | What it gives you | Stack v0.7.2 |
 | --- | --- | --- |
 | [pcie-ep-net](https://github.com/roysbike/pcie-ep-net) | the blade driver `openmiop-ep` (`omi0`), the BMC module `omi-rc`, the Blade 3 board modules | [v0.7.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.7.1) |
-| **mixtile-talos** (this one) | Talos Linux (Kubernetes) for Blade 3 with openmiop built in | [v0.7.1](https://github.com/roysbike/mixtile-talos/releases/tag/v0.7.1) (Talos v1.14.4) |
-| [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) | OpenWrt for the BMC: blade power and consoles, the BMC side of openmiop, the cluster's network edge, web UI, updates | [v0.4.3](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.3) (OpenWrt 25.12.6) |
+| **mixtile-talos** (this one) | Talos Linux (Kubernetes) for Blade 3 with openmiop built in | [v0.7.2](https://github.com/roysbike/mixtile-talos/releases/tag/v0.7.2) (Talos v1.14.5) |
+| [mixtile-clusterbox-mt7620a-openwrt](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt) | OpenWrt for the BMC: blade power and consoles, the BMC side of openmiop, the cluster's network edge, web UI, updates | [v0.4.4](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.4) (OpenWrt 25.12.6) |
 
 ```
         Cluster Box BMC (MT7620A, OpenWrt)  omi-rc, omi0 10.20.0.1, gateway to the LAN
@@ -54,8 +54,8 @@ replacement made of three repositories that are released together:
 
 ## Features
 
-* **Official Talos, official kernel.** Talos v1.14.4 with the Siderolabs
-  kernel 6.18.57-talos and the official extensions built for it (DRBD,
+* **Official Talos, official kernel.** Talos v1.14.5 with the Siderolabs
+  kernel 6.18.58-talos and the official extensions built for it (DRBD,
   ZFS, iSCSI, Panfrost GPU, Rockchip NPU).
 * **Blade 3 board support.** Device tree and U-Boot 2026.07 for the
   Blade 3 (from the Armbian mainline port), TF-A and the Rockchip DDR
@@ -77,7 +77,7 @@ replacement made of three repositories that are released together:
 | --- | --- |
 | Board | Mixtile Blade 3 (RK3588, 4× Cortex-A76 + 4× Cortex-A55), installed on eMMC |
 | Chassis | Mixtile Cluster Box (ASM2824 PCIe switch, MT7620A BMC), up to 4 blades |
-| BMC firmware | [ClusterBox firmware v0.4.3](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.3) (v0.4.0 and v0.3.0 work too) for `omi0`. With Mixtile's stock BMC firmware the blades boot and work, without `omi0` |
+| BMC firmware | [ClusterBox firmware v0.4.4](https://github.com/roysbike/mixtile-clusterbox-mt7620a-openwrt/releases/tag/v0.4.4) (v0.4.3, v0.4.0 and v0.3.0 work too) for `omi0`. With Mixtile's stock BMC firmware the blades boot and work, without `omi0` |
 | Kubernetes | not pinned by the image; tested with v1.34.3 (Cozystack) |
 | Tested on | a Cluster Box with four Blade 3: 3 control plane + 1 worker, DRBD/LINSTOR, ZFS, CloudNativePG |
 
@@ -89,14 +89,14 @@ is not a tested configuration.
 
 | Component | Version / source |
 | --- | --- |
-| Talos, imager | v1.14.4 |
-| Kernel | 6.18.57-talos (the official Talos kernel; Talos packages `v1.14.0-44-g2ec10eb`) |
+| Talos, imager | v1.14.5 |
+| Kernel | 6.18.58-talos (the official Talos kernel; Talos packages `v1.14.0-48-gf4bda77`) |
 | U-Boot | v2026.07, Blade 3 configuration from the Armbian mainline port |
 | TF-A | `lts-v2.14.6` |
 | DDR training blob | rkbin `74213af1` |
 | Device tree | `rk3588-mixtile-blade3.dtb` (Armbian port + Cluster Box PCIe changes, see [Technical details](#technical-details)) |
-| openmiop extension | `0.7.1-v1.14.4`: `openmiop-ep`, `blade3-nvme-recover`, `blade3-leds` from [pcie-ep-net v0.7.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.7.1) |
-| Official extensions | `drbd 9.3.4`, `zfs 2.4.4`, `iscsi-tools v0.2.0`, `panfrost`, `rockchip-rknn` (the v1.14.4 builds, pinned by digest) |
+| openmiop extension | `0.7.1-v1.14.5`: `openmiop-ep`, `blade3-nvme-recover`, `blade3-leds` from [pcie-ep-net v0.7.1](https://github.com/roysbike/pcie-ep-net/releases/tag/v0.7.1) |
+| Official extensions | `drbd 9.3.4`, `zfs 2.4.4`, `iscsi-tools v0.2.0`, `panfrost`, `rockchip-rknn` (the v1.14.5 builds, pinned by digest) |
 | Kernel arguments | `console=tty0 console=ttyS2,1500000n8 cma=128MB … -module.sig_enforce sysctl.net.core.default_qdisc=fq` |
 
 Release assets:
@@ -104,8 +104,8 @@ Release assets:
 | File | Use |
 | --- | --- |
 | installer `ghcr.io/roysbike/mixtile-talos-installer@sha256:…` | `talosctl upgrade` and `machine.install.image` |
-| `openmiop-0.7.1-blade3-talos-1.14.4-arm64.raw.xz` | disk image for a new node (eMMC) |
-| `openmiop-0.7.1-blade3-talos-1.14.4-arm64-boot-files.tar.gz` | DTB, `u-boot-rockchip.bin`, `openmiop-ep.ko`, extension manifest |
+| `openmiop-0.7.2-blade3-talos-1.14.5-arm64.raw.xz` | disk image for a new node (eMMC) |
+| `openmiop-0.7.2-blade3-talos-1.14.5-arm64-boot-files.tar.gz` | DTB, `u-boot-rockchip.bin`, `openmiop-ep.ko`, extension manifest |
 | `SHA256SUMS`, `BUILD-INFO.txt` | checksums, build record (commit, versions, digests) |
 
 ## Install a new node
@@ -127,7 +127,7 @@ Each blade is flashed on its own, over USB in MaskROM mode.
 4. Write the image:
 
    ```sh
-   ./scripts/flash-blade3-macos.sh --image openmiop-0.7.1-blade3-talos-1.14.4-arm64.raw.xz \
+   ./scripts/flash-blade3-macos.sh --image openmiop-0.7.2-blade3-talos-1.14.5-arm64.raw.xz \
        --loader rk3588_spl_loader_v1.08.111.bin
    ```
 
@@ -137,7 +137,7 @@ Each blade is flashed on its own, over USB in MaskROM mode.
    `rkdeveloptool wl 0 <image.raw>`, `rkdeveloptool rd`.
 5. Set DIP switch 4 back and boot. The serial console (UART2,
    1 500 000 baud; in the Cluster Box: CONSOLE in the BMC web UI) must
-   show `enabling system extension openmiop 0.7.1-v1.14.4`.
+   show `enabling system extension openmiop 0.7.1-v1.14.5`.
 6. Apply the machine configuration with `machine.install.disk:
    /dev/mmcblk0`, `machine.install.image` set to the installer above and
    the [omi0 documents](#machine-configuration-for-omi0).
@@ -183,9 +183,9 @@ parameters (queues, CPUs, offloads) go into
 ## Upgrade a node
 
 ```sh
-talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer@sha256:55cb24aad06312ad6d170636118890097930de0e9e28ce2e5877a1f11dab8748
+talosctl -n <node> upgrade --image ghcr.io/roysbike/mixtile-talos-installer:v0.7.2
 talosctl -n <node> patch mc --mode no-reboot \
-  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer@sha256:55cb24aad06312ad6d170636118890097930de0e9e28ce2e5877a1f11dab8748"}}}'
+  -p '{"machine":{"install":{"image":"ghcr.io/roysbike/mixtile-talos-installer:v0.7.2"}}}'
 ```
 
 * **One node at a time.** Before the next node: etcd has all members,
@@ -208,8 +208,8 @@ talosctl -n <node> patch mc --mode no-reboot \
 ## Verify
 
 ```sh
-talosctl -n <node> version                        # Tag: v1.14.4
-talosctl -n <node> get extensions                 # openmiop 0.7.1-v1.14.4, drbd, zfs, ...
+talosctl -n <node> version                        # Tag: v1.14.5
+talosctl -n <node> get extensions                 # openmiop 0.7.1-v1.14.5, drbd, zfs, ...
 talosctl -n <node> dmesg | grep openmiop          # "peer N up, 4 queues, doorbell, checksum offload"
 talosctl -n <node> get links | grep omi0          # alias omi0, up
 talosctl -n <node> get kernelmodulestatus | grep blade3   # blade3_leds, blade3_nvme_recover
