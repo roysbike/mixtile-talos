@@ -5,6 +5,12 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-04
+
+Blade OS of OpenMIOP Stack v0.7.2: v0.7.1 on Talos v1.14.5, openmiop
+0.7.1-v1.14.5 (same pcie-ep-net v0.7.1 code). DTB, U-Boot and the kernel
+command line unchanged.
+
 ### Changed
 
 - Talos v1.14.5 (Linux 6.18.58, etcd 3.7.3, on-demand kernel module
